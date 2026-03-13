@@ -79,8 +79,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       "address": _addressController.text.trim(),
       "email": _emailController.text.trim(),
       "password": _passwordController.text.trim(),
-      "isActive": true,
-      "role": "User" // Defaulting to User as requested
+      "isActive": false,  // New accounts require approval
+      "role": "User"
     };
 
     try {
@@ -92,13 +92,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Registration successful! Please login.'),
-              backgroundColor: Colors.green[600],
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const _RegistrationSuccessScreen(),
             ),
           );
-          Navigator.pop(context); // Go back to login
         }
       } else {
         _showError('Failed to register: ${response.statusCode}');
@@ -404,6 +403,121 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fillColor: Colors.grey[50],
       ),
       validator: validator,
+    );
+  }
+}
+
+// ─── Registration Success Screen ─────────────────────────────────────────────
+
+class _RegistrationSuccessScreen extends StatelessWidget {
+  const _RegistrationSuccessScreen();
+
+  static const primaryBlue = Color.fromRGBO(35, 97, 219, 1);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F4FF),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryBlue.withOpacity(0.15),
+                        blurRadius: 30,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.mark_email_read_rounded,
+                    size: 64,
+                    color: primaryBlue,
+                  ),
+                ),
+                const SizedBox(height: 36),
+                const Text(
+                  'Đăng Ký Thành Công!',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Tài khoản của bạn đã được ghi nhận.\nVui lòng chờ xét duyệt từ nhân viên của chúng tôi.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFF8C034).withOpacity(0.5)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time_rounded, color: Color(0xFFB8860B), size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Thời gian xét duyệt: 1 - 3 ngày làm việc',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFFB8860B),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Navigate all the way back to root (LoginScreen)
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      shadowColor: primaryBlue.withOpacity(0.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Quay về Trang Đăng Nhập',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

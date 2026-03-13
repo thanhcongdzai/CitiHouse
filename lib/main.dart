@@ -6,6 +6,7 @@ import 'screens/news.dart';
 import 'screens/service_screen.dart';
 import 'screens/account.dart';
 import 'screens/login_screen.dart';
+import 'screens/staff_approval_screen.dart';
 import 'services/auth_service.dart';
 import 'models/user.dart';
 
@@ -119,6 +120,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Still loading auth state — show splash
     if (!_authChecked) {
       return const Scaffold(
         body: Center(
@@ -127,6 +129,17 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
 
+    // Not logged in → show login as the root screen
+    if (_currentUser == null) {
+      return LoginScreen(onLoginSuccess: _handleLoginSuccess);
+    }
+
+    // accountStaff role → show staff approval screen directly
+    if (_currentUser!.role == 'accountStaff') {
+      return StaffApprovalScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    }
+
+    // Logged in → show main app with bottom navigation
     final List<Widget> widgetOptions = [
       DashboardScreen(currentUser: _currentUser),
       const NewsScreen(),
@@ -134,16 +147,6 @@ class _MainScreenState extends State<MainScreen> {
       AccountScreen(
         currentUser: _currentUser,
         onLogout: _handleLogout,
-        onLoginTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LoginScreen(
-                onLoginSuccess: _handleLoginSuccess,
-              ),
-            ),
-          );
-        },
       ),
     ];
 

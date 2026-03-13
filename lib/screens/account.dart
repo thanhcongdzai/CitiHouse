@@ -5,13 +5,11 @@ import 'my_appointments_screen.dart';
 class AccountScreen extends StatelessWidget {
   final User? currentUser;
   final VoidCallback onLogout;
-  final VoidCallback onLoginTap;
 
   const AccountScreen({
     super.key,
     required this.currentUser,
     required this.onLogout,
-    required this.onLoginTap,
   });
 
   static const primary = Color(0xFF2361DB);
@@ -19,74 +17,7 @@ class AccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (currentUser == null) {
-      return _buildLoggedOutView(context);
-    }
     return _buildLoggedInView(context);
-  }
-
-  // ─── Logged Out ──────────────────────────────────────────────────────────
-
-  Widget _buildLoggedOutView(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: primary.withOpacity(0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.account_circle_outlined, size: 70, color: primary),
-                ),
-                const SizedBox(height: 28),
-                const Text(
-                  'Welcome to CitiHouse',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: primary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Login to view your profile, manage properties,\nand connect with owners.',
-                  style: TextStyle(fontSize: 15, color: Colors.grey[600], height: 1.5),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 36),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: onLoginTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 6,
-                      shadowColor: primary.withOpacity(0.5),
-                    ),
-                    child: const Text(
-                      'Login / Register',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: 0.5),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   // ─── Logged In ───────────────────────────────────────────────────────────

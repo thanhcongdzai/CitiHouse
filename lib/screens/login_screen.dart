@@ -46,11 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
             final userId = user['id']?.toString() ?? '';
             await AuthService.saveLoginState(userId);
             if (mounted) {
-              Navigator.pop(context); // close login screen
-              widget.onLoginSuccess(); // notify MainScreen to refresh user state
+              widget.onLoginSuccess(); // MainScreen's setState will replace the LoginScreen
             }
           } else {
-            _showError('This account has been disabled.');
+            _showError('This account is not eligible yet.');
           }
         } else {
           _showError('Invalid phone number or password.');
@@ -83,11 +82,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: const BackButton(color: Colors.black87),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -236,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text("Don't have an account?", style: TextStyle(color: Colors.grey[700])),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const RegisterScreen()),
                         );
