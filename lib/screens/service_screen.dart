@@ -157,7 +157,7 @@ class ServiceScreen extends StatelessWidget {
                   title: 'Moving',
                   subtitle: 'Chuyển nhà',
                   icon: Icons.local_shipping_rounded,
-                  color: Colors.redAccent,
+                  color: Colors.red,
                 ),
                 _buildServiceCard(
                   title: 'Interior Design',

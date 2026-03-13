@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'screens/dashboard.dart';
 import 'screens/news.dart';
-import 'screens/service.dart';
+import 'screens/service_screen.dart';
 import 'screens/account.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
