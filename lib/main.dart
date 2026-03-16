@@ -6,7 +6,10 @@ import 'screens/news.dart';
 import 'screens/service_screen.dart';
 import 'screens/account.dart';
 import 'screens/login_screen.dart';
+import 'screens/on_site_staff_screen.dart';
 import 'screens/staff_approval_screen.dart';
+import 'screens/apartment_approval_staff_screen.dart';
+import 'screens/admin_screen.dart';
 import 'services/auth_service.dart';
 import 'models/user.dart';
 
@@ -137,6 +140,21 @@ class _MainScreenState extends State<MainScreen> {
     // accountStaff role → show staff approval screen directly
     if (_currentUser!.role == 'accountStaff') {
       return StaffApprovalScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    }
+    
+    // onSiteStaff role → show on site staff screen directly
+    if (_currentUser!.role == 'onSiteStaff') {
+      return OnSiteStaffScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    }
+    
+    // apartmentApprovalStaff role → show apartment approval staff screen directly
+    if (_currentUser!.role == 'apartmentApprovalStaff') {
+      return ApartmentApprovalStaffScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    }
+
+    // admin role → show admin screen directly
+    if (_currentUser!.role == 'admin') {
+      return AdminScreen(currentUser: _currentUser!, onLogout: _handleLogout);
     }
 
     // Logged in → show main app with bottom navigation

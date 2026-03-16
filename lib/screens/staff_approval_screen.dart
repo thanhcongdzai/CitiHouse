@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
+import 'staff_drawer.dart';
 
 class StaffApprovalScreen extends StatefulWidget {
   final User currentUser;
@@ -19,7 +20,6 @@ class StaffApprovalScreen extends StatefulWidget {
 
 class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
   static const primaryBlue = Color.fromRGBO(35, 97, 219, 1);
-
   static const accentYellow = Color.fromRGBO(248, 192, 52, 1);
 
   List<Map<String, dynamic>> _pendingUsers = [];
@@ -185,13 +185,12 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
             onPressed: _fetchPendingUsers,
             tooltip: 'Làm mới',
           ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: widget.onLogout,
-            tooltip: 'Đăng xuất',
-          ),
           const SizedBox(width: 8),
         ],
+      ),
+      drawer: StaffDrawer(
+        currentUser: widget.currentUser,
+        onLogout: widget.onLogout,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: primaryBlue))

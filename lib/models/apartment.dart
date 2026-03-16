@@ -13,6 +13,7 @@ class Apartment {
   final String displayCode;
   final String imageUrl;
   final String houseStatus;
+  final Map<String, dynamic>? verifications;
 
   Apartment({
     required this.id,
@@ -29,15 +30,16 @@ class Apartment {
     required this.displayCode,
     required this.imageUrl,
     required this.houseStatus,
+    this.verifications,
   });
 
   factory Apartment.fromJson(Map<String, dynamic> json) {
     return Apartment(
-      id: json['id'] as String? ?? '',
+      id: json['id']?.toString() ?? json['_id']?['\$oid']?.toString() ?? json['_id']?.toString() ?? '',
       title: json['title'] as String? ?? 'No Title',
       subject: json['subject'] as String? ?? 'No Subject',
       description: json['description'] as String? ?? '',
-      price: (json['price'] as num?)?.toInt() ?? 0,
+      price: json['price'] is Map ? int.tryParse(json['price']['\$numberLong']?.toString() ?? '0') ?? 0 : (json['price'] as num?)?.toInt() ?? 0,
       ward: json['location']?['ward'] as String? ?? '',
       commune: json['location']?['commune'] as String? ?? '',
       project: json['projectInfo']?['project'] as String? ?? '',
@@ -47,6 +49,7 @@ class Apartment {
       displayCode: json['displayCode'] as String? ?? '',
       imageUrl: json['imageUrl'] as String? ?? '',
       houseStatus: json['houseStatus'] as String? ?? '',
+      verifications: json['verifications'] as Map<String, dynamic>?,
     );
   }
 }

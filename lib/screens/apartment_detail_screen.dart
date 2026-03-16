@@ -65,6 +65,10 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                 Shadow(color: Colors.white, blurRadius: 10)
               ], // Better visibility on images
             ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => Navigator.pop(context, true),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,

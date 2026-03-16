@@ -38,7 +38,7 @@ class User {
       gender: json['gender'] ?? '',
       address: json['address'] ?? '',
       bankAccount: json['bankAccount'],
-      isActive: json['isActive'] ?? true,
+      isActive: json['isActive'] == true || json['isActive'] == 'true' || json['isActive'] == 1,
       role: json['role'] ?? 'User',
       email: json['email'] ?? '',
     );

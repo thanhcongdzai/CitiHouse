@@ -51,7 +51,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
-          apartments = data.map((json) => Apartment.fromJson(json)).toList();
+          final allApts = data.map((json) => Apartment.fromJson(json)).toList();
+          apartments = allApts.where((apt) {
+            final v = apt.verifications;
+            if (v == null) return false;
+            final imgStatus = v['image']?['status'];
+            final legStatus = v['legal']?['status'];
+            final oiStatus = v['ownerIntent']?['status'];
+            return imgStatus == 'Approved' && legStatus == 'Approved' && oiStatus == 'Approved';
+          }).toList();
           filteredApartments = List.from(apartments);
           _extractFilterOptions();
           isLoading = false;
@@ -611,8 +619,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final imageToShow = hasValidImage ? item.imageUrl : sampleImage;
 
           return GestureDetector(
-            onTap: () {
-                Navigator.push(
+            onTap: () async {
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ApartmentDetailScreen(
@@ -621,6 +629,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 );
+                // Based on user request, always refresh when navigating back from details
+                fetchApartments();
             },
             child: Container(
               margin: const EdgeInsets.only(bottom: 24),
