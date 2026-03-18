@@ -11,11 +11,15 @@ class StaffDrawer extends StatelessWidget {
   final VoidCallback? onDepositRequestedTapped;
   final VoidCallback? onAdminViewingStatsTapped;
   final VoidCallback? onAdminDepositStatsTapped;
+  final VoidCallback? onPendingDepositsTapped;
+  final VoidCallback? onApprovedDepositsTapped;
   final bool isMyJobsSelected;
   final bool isCompletedJobsSelected;
   final bool isDepositRequestedSelected;
   final bool isAdminViewingStatsSelected;
   final bool isAdminDepositStatsSelected;
+  final bool isPendingDepositsSelected;
+  final bool isApprovedDepositsSelected;
 
   const StaffDrawer({
     super.key,
@@ -27,11 +31,15 @@ class StaffDrawer extends StatelessWidget {
     this.onDepositRequestedTapped,
     this.onAdminViewingStatsTapped,
     this.onAdminDepositStatsTapped,
+    this.onPendingDepositsTapped,
+    this.onApprovedDepositsTapped,
     this.isMyJobsSelected = false,
     this.isCompletedJobsSelected = false,
     this.isDepositRequestedSelected = false,
     this.isAdminViewingStatsSelected = false,
     this.isAdminDepositStatsSelected = false,
+    this.isPendingDepositsSelected = false,
+    this.isApprovedDepositsSelected = false,
   });
 
   @override
@@ -42,7 +50,7 @@ class StaffDrawer extends StatelessWidget {
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
 
     // Helper boolean
-    final isAllJobsSelected = !isMyJobsSelected && !isCompletedJobsSelected && !isDepositRequestedSelected && !isAdminViewingStatsSelected && !isAdminDepositStatsSelected;
+    final isAllJobsSelected = !isMyJobsSelected && !isCompletedJobsSelected && !isDepositRequestedSelected && !isAdminViewingStatsSelected && !isAdminDepositStatsSelected && !isPendingDepositsSelected && !isApprovedDepositsSelected;
 
     return Drawer(
       child: Column(
@@ -65,7 +73,11 @@ class StaffDrawer extends StatelessWidget {
                       ? 'Nhân viên duyệt tài khoản'
                       : currentUser.role == 'admin'
                           ? 'Quản trị viên'
-                          : currentUser.role,
+                          : currentUser.role == 'depositApprovalStaff'
+                              ? 'Nhân viên duyệt đặt cọc'
+                              : currentUser.role == 'apartmentApprovalStaff'
+                                  ? 'Nhân viên duyệt bài đăng'
+                                  : currentUser.role,
               style: TextStyle(
                 color: Colors.white.withOpacity(0.9),
                 fontSize: 14,
@@ -133,6 +145,42 @@ class StaffDrawer extends StatelessWidget {
                     selected: isAdminDepositStatsSelected,
                     selectedTileColor: primaryBlue.withOpacity(0.05),
                     onTap: onAdminDepositStatsTapped,
+                  ),
+                  const Divider(),
+                ],
+
+                if (currentUser.role == 'depositApprovalStaff') ...[
+                  ListTile(
+                    leading: Icon(
+                      Icons.pending_actions_rounded,
+                      color: isPendingDepositsSelected ? primaryBlue : Colors.black87,
+                    ),
+                    title: Text(
+                      'Đợi duyệt',
+                      style: TextStyle(
+                        fontWeight: isPendingDepositsSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isPendingDepositsSelected ? primaryBlue : Colors.black87,
+                      ),
+                    ),
+                    selected: isPendingDepositsSelected,
+                    selectedTileColor: primaryBlue.withOpacity(0.05),
+                    onTap: onPendingDepositsTapped,
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Icons.check_circle_outline_rounded,
+                      color: isApprovedDepositsSelected ? primaryBlue : Colors.black87,
+                    ),
+                    title: Text(
+                      'Đã duyệt',
+                      style: TextStyle(
+                        fontWeight: isApprovedDepositsSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isApprovedDepositsSelected ? primaryBlue : Colors.black87,
+                      ),
+                    ),
+                    selected: isApprovedDepositsSelected,
+                    selectedTileColor: primaryBlue.withOpacity(0.05),
+                    onTap: onApprovedDepositsTapped,
                   ),
                   const Divider(),
                 ],

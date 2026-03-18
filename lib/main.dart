@@ -9,6 +9,7 @@ import 'screens/login_screen.dart';
 import 'screens/on_site_staff_screen.dart';
 import 'screens/staff_approval_screen.dart';
 import 'screens/apartment_approval_staff_screen.dart';
+import 'screens/deposit_approval_staff_screen.dart';
 import 'screens/admin_screen.dart';
 import 'services/auth_service.dart';
 import 'models/user.dart';
@@ -150,6 +151,11 @@ class _MainScreenState extends State<MainScreen> {
     // apartmentApprovalStaff role → show apartment approval staff screen directly
     if (_currentUser!.role == 'apartmentApprovalStaff') {
       return ApartmentApprovalStaffScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    }
+
+    // depositApprovalStaff role → show deposit approval staff screen directly
+    if (_currentUser!.role == 'depositApprovalStaff') {
+      return DepositApprovalStaffScreen(currentUser: _currentUser!, onLogout: _handleLogout);
     }
 
     // admin role → show admin screen directly

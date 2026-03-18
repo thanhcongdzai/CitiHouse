@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../models/user.dart';
 import 'my_appointments_screen.dart';
+import 'my_deposit_orders_screen.dart';
 
-class AccountScreen extends StatelessWidget {
+class AccountScreen extends StatefulWidget {
   final User? currentUser;
   final VoidCallback onLogout;
 
@@ -12,8 +15,39 @@ class AccountScreen extends StatelessWidget {
     required this.onLogout,
   });
 
+  @override
+  State<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends State<AccountScreen> {
   static const primary = Color(0xFF2361DB);
   static const secondary = Color(0xFFF8C034);
+
+  int _depositOrderCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDepositOrderCount();
+  }
+
+  Future<void> _fetchDepositOrderCount() async {
+    final userId = widget.currentUser?.id;
+    if (userId == null || userId.isEmpty) return;
+    try {
+      final res = await http.get(
+        Uri.parse('http://127.0.0.1:8000/api/deposit-orders/buyer/$userId/'),
+      );
+      if (res.statusCode == 200) {
+        final data = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;
+        if (mounted) {
+          setState(() {
+            _depositOrderCount = data.length;
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +57,7 @@ class AccountScreen extends StatelessWidget {
   // ─── Logged In ───────────────────────────────────────────────────────────
 
   Widget _buildLoggedInView(BuildContext context) {
-    final user = currentUser!;
+    final user = widget.currentUser!;
     final initials = '${user.firstName.isNotEmpty ? user.firstName[0] : ''}'
         '${user.lastName.isNotEmpty ? user.lastName[0] : ''}'.toUpperCase();
 
@@ -180,11 +214,18 @@ class AccountScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _orderStatus(Icons.pending_outlined, 'Pending', primary),
-                      _orderStatus(Icons.handshake_outlined, 'Negotiating', primary),
-                      _orderStatus(Icons.draw_outlined, 'Signing', primary),
-                      _orderStatus(Icons.check_circle_outline, 'Completed', primary),
-                      _orderStatus(Icons.cancel_outlined, 'Cancelled', primary),
+                      _orderStatus(context, Icons.pending_outlined, 'Pending', primary, onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MyDepositOrdersScreen(userId: user.id),
+                          ),
+                        ).then((_) => _fetchDepositOrderCount());
+                      }, badgeCount: _depositOrderCount),
+                      _orderStatus(context, Icons.handshake_outlined, 'Negotiating', primary),
+                      _orderStatus(context, Icons.draw_outlined, 'Signing', primary),
+                      _orderStatus(context, Icons.check_circle_outline, 'Completed', primary),
+                      _orderStatus(context, Icons.cancel_outlined, 'Cancelled', primary),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -252,7 +293,7 @@ class AccountScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              onLogout();
+              widget.onLogout();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red[600],
@@ -339,16 +380,42 @@ class AccountScreen extends StatelessWidget {
         ),
       );
 
-  Widget _orderStatus(IconData icon, String label, Color color) => Column(
-        children: [
-          Container(
-            width: 46, height: 46,
-            decoration: BoxDecoration(color: color.withOpacity(0.08), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 6),
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.black87)),
-        ],
+  Widget _orderStatus(BuildContext context, IconData icon, String label, Color color, {VoidCallback? onTap, int badgeCount = 0}) => GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 46, height: 46,
+                  decoration: BoxDecoration(
+                    color: onTap != null ? color.withOpacity(0.15) : color.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                    border: onTap != null ? Border.all(color: color.withOpacity(0.3), width: 1.5) : null,
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(label, style: const TextStyle(fontSize: 11, color: Colors.black87)),
+          ],
+        ),
       );
 
   Widget _menuTile(IconData icon, Color color, String title, String subtitle, {VoidCallback? onTap}) => ListTile(
