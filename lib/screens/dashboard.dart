@@ -17,6 +17,10 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final Color primaryBlue = const Color.fromRGBO(35, 97, 219, 1);
   final Color accentYellow = const Color.fromRGBO(248, 192, 52, 1);
+  final Color bgTop = const Color(0xFFEAF1FF);
+  final Color bgBottom = const Color(0xFFF7FBFF);
+  final Color surfaceBlue = const Color(0xFFF2F6FF);
+  final Color cardBlue = const Color(0xFFEDF3FF);
 
   List<Apartment> apartments = [];
   List<Apartment> filteredApartments = [];
@@ -39,6 +43,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Set<String> _buildings = {};
   Set<int> _floors = {};
 
+  bool get _hasActiveFilters =>
+      _minPrice != null ||
+      _maxPrice != null ||
+      _selectedWard != null ||
+      _selectedCommune != null ||
+      _selectedProject != null ||
+      _selectedBuilding != null ||
+      _selectedFloor != null;
+
   @override
   void initState() {
     super.initState();
@@ -47,7 +60,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> fetchApartments() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/apartments/'));
+      final response =
+          await http.get(Uri.parse('http://127.0.0.1:8000/api/apartments/'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
@@ -58,7 +72,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final imgStatus = v['image']?['status'];
             final legStatus = v['legal']?['status'];
             final oiStatus = v['ownerIntent']?['status'];
-            return imgStatus == 'Approved' && legStatus == 'Approved' && oiStatus == 'Approved';
+            return imgStatus == 'Approved' &&
+                legStatus == 'Approved' &&
+                oiStatus == 'Approved' &&
+                apt.houseStatus == 'Available';
           }).toList();
           filteredApartments = List.from(apartments);
           _extractFilterOptions();
@@ -72,7 +89,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     } catch (e) {
       setState(() {
-        error = 'Error connecting to server. Make sure the API is running at 127.0.0.1:8000.\nDetails: $e';
+        error =
+            'Error connecting to server. Make sure the API is running at 127.0.0.1:8000.\nDetails: $e';
         isLoading = false;
       });
     }
@@ -101,10 +119,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (_minPrice != null && apt.price < _minPrice!) match = false;
         if (_maxPrice != null && apt.price > _maxPrice!) match = false;
         if (_selectedWard != null && apt.ward != _selectedWard) match = false;
-        if (_selectedCommune != null && apt.commune != _selectedCommune) match = false;
-        if (_selectedProject != null && apt.project != _selectedProject) match = false;
-        if (_selectedBuilding != null && apt.building != _selectedBuilding) match = false;
-        if (_selectedFloor != null && apt.floor != _selectedFloor) match = false;
+        if (_selectedCommune != null && apt.commune != _selectedCommune)
+          match = false;
+        if (_selectedProject != null && apt.project != _selectedProject)
+          match = false;
+        if (_selectedBuilding != null && apt.building != _selectedBuilding)
+          match = false;
+        if (_selectedFloor != null && apt.floor != _selectedFloor)
+          match = false;
         return match;
       }).toList();
     });
@@ -120,12 +142,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: surfaceBlue,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryBlue.withOpacity(0.15),
+                    blurRadius: 30,
+                    offset: const Offset(0, -8),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -135,13 +164,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     height: 5,
                     width: 40,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: primaryBlue.withOpacity(0.25),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   // Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -192,7 +222,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: primaryBlue.withOpacity(0.4), width: 1.5),
+                                    border: Border.all(
+                                        color: primaryBlue.withOpacity(0.4),
+                                        width: 1.5),
                                     boxShadow: [
                                       BoxShadow(
                                         color: primaryBlue.withOpacity(0.08),
@@ -205,34 +237,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     keyboardType: TextInputType.number,
                                     decoration: InputDecoration(
                                       prefixText: '₫ ',
-                                      prefixStyle: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                                      prefixStyle: TextStyle(
+                                          color: primaryBlue,
+                                          fontWeight: FontWeight.bold),
                                       labelText: 'Min Price',
-                                      labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                      labelStyle: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide.none,
                                       ),
                                       filled: true,
-                                      fillColor: Colors.grey[50],
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                      fillColor: cardBlue,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 16),
                                     ),
                                     onChanged: (val) {
                                       _minPrice = double.tryParse(val);
                                     },
-                                    controller: TextEditingController(text: _minPrice?.toStringAsFixed(0) ?? ''),
+                                    controller: TextEditingController(
+                                        text: _minPrice?.toStringAsFixed(0) ??
+                                            ''),
                                   ),
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text('-', style: TextStyle(color: Colors.grey[500], fontSize: 24, fontWeight: FontWeight.w300)),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('-',
+                                    style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w300)),
                               ),
                               Expanded(
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: primaryBlue.withOpacity(0.4), width: 1.5),
+                                    border: Border.all(
+                                        color: primaryBlue.withOpacity(0.4),
+                                        width: 1.5),
                                     boxShadow: [
                                       BoxShadow(
                                         color: primaryBlue.withOpacity(0.08),
@@ -245,21 +292,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     keyboardType: TextInputType.number,
                                     decoration: InputDecoration(
                                       prefixText: '₫ ',
-                                      prefixStyle: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                                      prefixStyle: TextStyle(
+                                          color: primaryBlue,
+                                          fontWeight: FontWeight.bold),
                                       labelText: 'Max Price',
-                                      labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                      labelStyle: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide.none,
                                       ),
                                       filled: true,
-                                      fillColor: Colors.grey[50],
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                      fillColor: cardBlue,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 16),
                                     ),
                                     onChanged: (val) {
                                       _maxPrice = double.tryParse(val);
                                     },
-                                    controller: TextEditingController(text: _maxPrice?.toStringAsFixed(0) ?? ''),
+                                    controller: TextEditingController(
+                                        text: _maxPrice?.toStringAsFixed(0) ??
+                                            ''),
                                   ),
                                 ),
                               ),
@@ -273,7 +328,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.map_rounded,
                             value: _selectedWard,
                             items: _wards.toList()..sort(),
-                            onChanged: (val) => setModalState(() => _selectedWard = val),
+                            onChanged: (val) =>
+                                setModalState(() => _selectedWard = val),
                           ),
                         if (_communes.isNotEmpty)
                           _buildDropdownSection(
@@ -281,7 +337,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.location_city_rounded,
                             value: _selectedCommune,
                             items: _communes.toList()..sort(),
-                            onChanged: (val) => setModalState(() => _selectedCommune = val),
+                            onChanged: (val) =>
+                                setModalState(() => _selectedCommune = val),
                           ),
                         if (_projects.isNotEmpty)
                           _buildDropdownSection(
@@ -289,7 +346,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.business_rounded,
                             value: _selectedProject,
                             items: _projects.toList()..sort(),
-                            onChanged: (val) => setModalState(() => _selectedProject = val),
+                            onChanged: (val) =>
+                                setModalState(() => _selectedProject = val),
                           ),
                         if (_buildings.isNotEmpty)
                           _buildDropdownSection(
@@ -297,15 +355,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.apartment_rounded,
                             value: _selectedBuilding,
                             items: _buildings.toList()..sort(),
-                            onChanged: (val) => setModalState(() => _selectedBuilding = val),
+                            onChanged: (val) =>
+                                setModalState(() => _selectedBuilding = val),
                           ),
                         if (_floors.isNotEmpty)
                           _buildDropdownSection(
                             title: 'Floor',
                             icon: Icons.layers_rounded,
                             value: _selectedFloor?.toString(),
-                            items: _floors.map((e) => e.toString()).toList()..sort((a, b) => int.parse(a).compareTo(int.parse(b))),
-                            onChanged: (val) => setModalState(() => _selectedFloor = val == null ? null : int.tryParse(val)),
+                            items: _floors.map((e) => e.toString()).toList()
+                              ..sort((a, b) =>
+                                  int.parse(a).compareTo(int.parse(b))),
+                            onChanged: (val) => setModalState(() =>
+                                _selectedFloor =
+                                    val == null ? null : int.tryParse(val)),
                           ),
                       ],
                     ),
@@ -313,10 +376,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: surfaceBlue,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: primaryBlue.withOpacity(0.1),
                           blurRadius: 20,
                           offset: const Offset(0, -5),
                         )
@@ -361,7 +424,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildFilterSection({required String title, required IconData icon, required Widget child}) {
+  Widget _buildFilterSection(
+      {required String title, required IconData icon, required Widget child}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 28),
       child: Column(
@@ -409,7 +473,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBlue,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: primaryBlue.withOpacity(0.4), width: 1.5),
           boxShadow: [
@@ -425,10 +489,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             isExpanded: true,
             value: value,
             icon: Icon(Icons.keyboard_arrow_down_rounded, color: primaryBlue),
-            hint: Text(
-              'Select $title', 
-              style: TextStyle(color: Colors.grey[500], fontSize: 15)
-            ),
+            hint: Text('Select $title',
+                style: TextStyle(color: Colors.grey[500], fontSize: 15)),
             style: const TextStyle(
               fontSize: 16,
               color: Colors.black87,
@@ -455,7 +517,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: bgBottom,
         body: Center(
           child: CircularProgressIndicator(color: primaryBlue),
         ),
@@ -464,14 +526,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (error != null) {
       return Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: bgBottom,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline_rounded, color: Colors.red[400], size: 60),
+                Icon(Icons.error_outline_rounded,
+                    color: Colors.red[400], size: 60),
                 const SizedBox(height: 16),
                 Text(
                   error!,
@@ -488,11 +551,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     fetchApartments();
                   },
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Try Again', style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: const Text('Try Again',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -507,7 +572,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (apartments.isEmpty) {
       return Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: bgBottom,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -516,7 +581,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 16),
               Text(
                 'No properties found',
-                style: TextStyle(fontSize: 18, color: Colors.grey[600], fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -525,32 +593,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: bgBottom,
       appBar: AppBar(
         title: Text(
           'Discover',
           style: TextStyle(
-            color: primaryBlue,
+            color: Colors.amber[800],
             fontWeight: FontWeight.w800,
             fontSize: 24,
             letterSpacing: 0.5,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: bgTop,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         actions: [
           IconButton(
             icon: Stack(
               children: [
                 Icon(Icons.filter_list_rounded, color: primaryBlue),
-                if (_minPrice != null ||
-                    _maxPrice != null ||
-                    _selectedWard != null ||
-                    _selectedCommune != null ||
-                    _selectedProject != null ||
-                    _selectedBuilding != null ||
-                    _selectedFloor != null)
+                if (_hasActiveFilters)
                   Positioned(
                     right: 0,
                     top: 0,
@@ -575,243 +638,367 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: filteredApartments.isEmpty 
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.filter_alt_off_rounded, size: 60, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No properties match your filters',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _minPrice = null;
-                        _maxPrice = null;
-                        _selectedWard = null;
-                        _selectedCommune = null;
-                        _selectedProject = null;
-                        _selectedBuilding = null;
-                        _selectedFloor = null;
-                      });
-                      _applyFilters();
-                    },
-                    child: Text('Clear Filters', style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-              itemCount: filteredApartments.length,
-              itemBuilder: (context, index) {
-                final item = filteredApartments[index];
-          // Sample image logic based on instructions
-          const sampleImage =
-              'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&auto=format&fit=crop&q=60';
-          final bool hasValidImage = item.imageUrl.isNotEmpty &&
-              item.imageUrl.startsWith('http') &&
-              item.imageUrl != 'https://image1.com';
-          final imageToShow = hasValidImage ? item.imageUrl : sampleImage;
-
-          return GestureDetector(
-            onTap: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ApartmentDetailScreen(
-                      apartment: item,
-                      currentUser: widget.currentUser,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [bgTop, bgBottom],
+          ),
+        ),
+        child: filteredApartments.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.filter_alt_off_rounded,
+                        size: 60, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No properties match your filters',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
                     ),
-                  ),
-                );
-                // Based on user request, always refresh when navigating back from details
-                fetchApartments();
-            },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image Section
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                        child: Hero(
-                          tag: 'apartment_image_${item.id}',
-                          child: Image.network(
-                            imageToShow,
-                            height: 220,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              height: 220,
-                              color: Colors.grey[300],
-                              child: const Center(
-                                  child: Icon(Icons.broken_image_rounded, size: 50, color: Colors.grey)),
-                            ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _minPrice = null;
+                          _maxPrice = null;
+                          _selectedWard = null;
+                          _selectedCommune = null;
+                          _selectedProject = null;
+                          _selectedBuilding = null;
+                          _selectedFloor = null;
+                        });
+                        _applyFilters();
+                      },
+                      child: Text('Clear Filters',
+                          style: TextStyle(
+                              color: primaryBlue, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                itemCount: filteredApartments.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _buildOverviewPanel();
+                  }
+                  final item = filteredApartments[index - 1];
+                  // Sample image logic based on instructions
+                  const sampleImage =
+                      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&auto=format&fit=crop&q=60';
+                  final bool hasValidImage = item.imageUrl.isNotEmpty &&
+                      item.imageUrl.startsWith('http') &&
+                      item.imageUrl != 'https://image1.com';
+                  final imageToShow =
+                      hasValidImage ? item.imageUrl : sampleImage;
+
+                  return GestureDetector(
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ApartmentDetailScreen(
+                            apartment: item,
+                            currentUser: widget.currentUser,
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: 16,
-                        left: 16,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(20),
+                      );
+                      // Based on user request, always refresh when navigating back from details
+                      fetchApartments();
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.white, cardBlue],
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        border:
+                            Border.all(color: primaryBlue.withOpacity(0.08)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: primaryBlue.withOpacity(0.12),
+                            blurRadius: 24,
+                            offset: const Offset(0, 10),
                           ),
-                          child: Row(
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Image Section
+                          Stack(
                             children: [
-                              Icon(Icons.star_rounded, color: accentYellow, size: 16),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'Featured',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Colors.black87,
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(24)),
+                                child: Hero(
+                                  tag: 'apartment_image_${item.id}',
+                                  child: Image.network(
+                                    imageToShow,
+                                    height: 220,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                      height: 220,
+                                      color: Colors.grey[300],
+                                      child: const Center(
+                                          child: Icon(
+                                              Icons.broken_image_rounded,
+                                              size: 50,
+                                              color: Colors.grey)),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 16,
+                                left: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.9),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                        color: Colors.white.withOpacity(0.9)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.star_rounded,
+                                          color: accentYellow, size: 16),
+                                      const SizedBox(width: 4),
+                                      const Text(
+                                        'Featured',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 16,
+                                right: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.9),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white.withOpacity(0.9)),
+                                  ),
+                                  child: Icon(
+                                    Icons.favorite_border_rounded,
+                                    color: Colors.grey[400],
+                                    size: 20,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.favorite_border_rounded,
-                            color: Colors.grey[400],
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  // Content Section
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.title,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.black87,
-                                      height: 1.2,
+
+                          // Content Section
+                          Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        item.title,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                              color: Colors.black87,
+                                              height: 1.2,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: accentYellow.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: accentYellow),
-                              ),
-                              child: Text(
-                                item.houseStatus,
-                                style: TextStyle(
-                                  color: Colors.orange[800],
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: accentYellow.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: accentYellow),
+                                      ),
+                                      child: Text(
+                                        item.houseStatus,
+                                        style: TextStyle(
+                                          color: Colors.amber[900],
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  _formatPrice(item.price),
+                                  style: TextStyle(
+                                    color: Colors.amber[800],
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Property Features
+                                Row(
+                                  children: [
+                                    _buildFeature(
+                                        Icons.king_bed_rounded, '2 Beds'),
+                                    _buildDotSeparator(),
+                                    _buildFeature(
+                                        Icons.bathtub_rounded, '2 Baths'),
+                                    _buildDotSeparator(),
+                                    _buildFeature(
+                                        Icons.square_foot_rounded, '80 m2'),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                const Divider(height: 1),
+                                const SizedBox(height: 16),
+
+                                // Location
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: primaryBlue.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(Icons.location_on_rounded,
+                                          size: 16, color: primaryBlue),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        '${item.ward}, ${item.commune}',
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _formatPrice(item.price),
-                          style: TextStyle(
-                            color: primaryBlue,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Property Features
-                        Row(
-                          children: [
-                            _buildFeature(Icons.king_bed_rounded, '2 Beds'),
-                            _buildDotSeparator(),
-                            _buildFeature(Icons.bathtub_rounded, '2 Baths'),
-                            _buildDotSeparator(),
-                            _buildFeature(Icons.square_foot_rounded, '80 m²'),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const Divider(height: 1),
-                        const SizedBox(height: 16),
-                        
-                        // Location
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: primaryBlue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(Icons.location_on_rounded, size: 16, color: primaryBlue),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                '${item.ward}, ${item.commune}',
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewPanel() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryBlue.withOpacity(0.95),
+            const Color(0xFF3F7DFF),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: primaryBlue.withOpacity(0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${filteredApartments.length} listings available',
+                  style: TextStyle(
+                    color: Colors.amber[100],
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
                   ),
-                ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _hasActiveFilters
+                      ? 'Filtered results are shown'
+                      : 'Curated homes with verified information',
+                  style: TextStyle(
+                    color: Colors.amber.shade50.withOpacity(0.95),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Material(
+            color: Colors.white.withOpacity(0.18),
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: _showFilterModal,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.tune_rounded, color: Colors.white, size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'Filters',
+                      style: TextStyle(
+                        color: const Color.fromRGBO(248, 192, 52, 1),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -819,14 +1006,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildFeature(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
+        Icon(icon, size: 16, color: primaryBlue.withOpacity(0.65)),
         const SizedBox(width: 4),
         Text(
           text,
-          style: TextStyle(
-            color: Colors.grey[700],
+          style: const TextStyle(
+            color: Color(0xFF4B5A7A),
             fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -839,7 +1026,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: 4,
       height: 4,
       decoration: BoxDecoration(
-        color: Colors.grey[400],
+        color: primaryBlue.withOpacity(0.35),
         shape: BoxShape.circle,
       ),
     );

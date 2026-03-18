@@ -11,6 +11,7 @@ import 'screens/staff_approval_screen.dart';
 import 'screens/apartment_approval_staff_screen.dart';
 import 'screens/deposit_approval_staff_screen.dart';
 import 'screens/admin_screen.dart';
+import 'screens/post_apartment_screen.dart';
 import 'services/auth_service.dart';
 import 'models/user.dart';
 
@@ -50,15 +51,32 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   User? _currentUser;
   bool _authChecked = false;
+  late final AnimationController _centerButtonController;
+  late final Animation<double> _centerPulse;
+  bool _isCenterPressed = false;
 
   @override
   void initState() {
     super.initState();
+    _centerButtonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1300),
+    )..repeat(reverse: true);
+    _centerPulse = CurvedAnimation(
+      parent: _centerButtonController,
+      curve: Curves.easeInOut,
+    );
     _checkLoginStatus();
+  }
+
+  @override
+  void dispose() {
+    _centerButtonController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkLoginStatus() async {
@@ -176,31 +194,209 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       body: widgetOptions[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: _onItemTapped,
-        selectedIndex: _selectedIndex,
-        destinations: const <NavigationDestination>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: 'Dashboard',
+      bottomNavigationBar: _buildBottomNavBar(context),
+    );
+  }
+
+  Widget _buildBottomNavBar(BuildContext context) {
+    const Color primaryBlue = Color.fromRGBO(35, 97, 219, 1);
+    const Color accentYellow = Color.fromRGBO(248, 192, 52, 1);
+
+    Widget navItem(int index, IconData icon, IconData selectedIcon, String label) {
+      final bool selected = _selectedIndex == index;
+      return InkWell(
+        onTap: () => _onItemTapped(index),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                selected ? selectedIcon : icon,
+                color: selected ? Colors.white : Colors.white.withOpacity(0.6),
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? Colors.white : Colors.white.withOpacity(0.6),
+                ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.article),
-            icon: Icon(Icons.article_outlined),
-            label: 'News',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.design_services),
-            icon: Icon(Icons.design_services_outlined),
-            label: 'Service',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.person),
-            icon: Icon(Icons.person_outline),
-            label: 'Account',
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: primaryBlue,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
           ),
         ],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 68,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Left + Right nav items
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  navItem(0, Icons.home_outlined, Icons.home, 'Dashboard'),
+                  navItem(1, Icons.article_outlined, Icons.article, 'News'),
+                  const SizedBox(width: 72), // space for center button
+                  navItem(2, Icons.design_services_outlined, Icons.design_services, 'Service'),
+                  navItem(3, Icons.person_outline, Icons.person, 'Account'),
+                ],
+              ),
+              // Center prominent + button with 3D + multi-layer glow animation
+              Positioned(
+                top: -20,
+                child: AnimatedBuilder(
+                  animation: _centerPulse,
+                  builder: (context, child) {
+                    final double baseScale = 1.0;
+                    final double idlePulse = 0.03 * _centerPulse.value;
+                    final double pressOffset = _isCenterPressed ? -0.08 : 0.0;
+                    final double scale = baseScale + idlePulse + pressOffset;
+
+                    return GestureDetector(
+                      onTapDown: (_) {
+                        setState(() {
+                          _isCenterPressed = true;
+                        });
+                      },
+                      onTapUp: (_) {
+                        setState(() {
+                          _isCenterPressed = false;
+                        });
+                      },
+                      onTapCancel: () {
+                        setState(() {
+                          _isCenterPressed = false;
+                        });
+                      },
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PostApartmentScreen(currentUser: _currentUser),
+                          ),
+                        );
+                      },
+                      child: Transform.scale(
+                        scale: scale.clamp(0.88, 1.10),
+                        child: SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // rotating soft white layers (elliptical glow)
+                              Transform.rotate(
+                                angle: 2 * 3.1415926 * _centerPulse.value,
+                                child: Container(
+                                  width: 78,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(40),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.24),
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Transform.rotate(
+                                angle: -2 * 3.1415926 * (_centerPulse.value * 0.7),
+                                child: Container(
+                                  width: 70,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(40),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.16),
+                                      width: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Transform.rotate(
+                                angle: 2 * 3.1415926 * (_centerPulse.value * 0.4),
+                                child: Container(
+                                  width: 64,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(40),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.12),
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // main 3D button
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: primaryBlue,
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color.fromRGBO(60, 124, 240, 1),
+                                      Color.fromRGBO(22, 74, 185, 1),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.4,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.25),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                    BoxShadow(
+                                      color: accentYellow.withOpacity(0.55 + 0.25 * _centerPulse.value),
+                                      blurRadius: 20 + 6 * _centerPulse.value,
+                                      spreadRadius: 1.5 + 2 * _centerPulse.value,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.add_rounded,
+                                  color: accentYellow,
+                                  size: 34,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

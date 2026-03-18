@@ -17,6 +17,9 @@ class ApartmentDetailScreen extends StatefulWidget {
 class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   final Color primaryBlue = const Color.fromRGBO(35, 97, 219, 1);
   final Color accentYellow = const Color.fromRGBO(248, 192, 52, 1);
+  final Color bgTop = const Color(0xFFEAF2FF);
+  final Color bgBottom = const Color(0xFFF7FBFF);
+  final Color cardTint = const Color(0xFFF1F6FF);
   int _currentImageIndex = 0;
   late final PageController _pageController;
 
@@ -51,19 +54,17 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: bgBottom,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 350.0,
             floating: false,
             pinned: true,
-            backgroundColor: Colors.white,
-            iconTheme: IconThemeData(
-              color: primaryBlue, // App bar icons color
-              shadows: [
-                Shadow(color: Colors.white, blurRadius: 10)
-              ], // Better visibility on images
+            backgroundColor: primaryBlue,
+            iconTheme: const IconThemeData(
+              color: Colors.white,
+              shadows: [Shadow(color: Colors.black54, blurRadius: 12)],
             ),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
@@ -110,6 +111,20 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       );
                     },
                   ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.35),
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.22),
+                        ],
+                        stops: const [0.0, 0.45, 1.0],
+                      ),
+                    ),
+                  ),
                   // Image indicator (like Shopee)
                   Positioned(
                     bottom: 20,
@@ -118,8 +133,9 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: primaryBlue.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withOpacity(0.5)),
                       ),
                       child: Text(
                         '${_currentImageIndex + 1}/${images.length}',
@@ -140,7 +156,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       child: Center(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
+                            color: primaryBlue.withOpacity(0.55),
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
@@ -165,7 +181,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       child: Center(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
+                            color: primaryBlue.withOpacity(0.55),
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
@@ -187,7 +203,13 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
           ),
           SliverToBoxAdapter(
             child: Container(
-              color: Colors.grey[100],
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [bgTop, bgBottom],
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -196,13 +218,18 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                     margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.white, cardTint],
+                      ),
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: primaryBlue.withOpacity(0.12)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
+                          color: primaryBlue.withOpacity(0.15),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
@@ -211,25 +238,35 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              _formatPrice(widget.apartment.price),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    color: primaryBlue,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                            Expanded(
+                              child: Text(
+                                _formatPrice(widget.apartment.price),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: primaryBlue,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                              ),
                             ),
+                            const SizedBox(width: 10),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: accentYellow.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                border:
-                                    Border.all(color: accentYellow, width: 1),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    accentYellow.withOpacity(0.35),
+                                    accentYellow.withOpacity(0.2),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                    color: accentYellow.withOpacity(0.75),
+                                    width: 1.2),
                               ),
                               child: Text(
                                 widget.apartment.houseStatus,
@@ -258,8 +295,72 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                           widget.apartment.subject,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.grey[600],
+                                    color: const Color(0xFF5C6B86),
                                   ),
+                        ),
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _buildHighlightChip(Icons.qr_code_rounded,
+                                widget.apartment.displayCode.isNotEmpty ? widget.apartment.displayCode : 'N/A'),
+                            _buildHighlightChip(Icons.location_on_rounded,
+                                widget.apartment.ward.isNotEmpty ? widget.apartment.ward : 'Unknown area'),
+                            _buildHighlightChip(Icons.business_rounded,
+                                widget.apartment.project.isNotEmpty ? widget.apartment.project : 'No project'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Verification card
+                  Container(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [primaryBlue.withOpacity(0.96), const Color(0xFF3E79F7)],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryBlue.withOpacity(0.32),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.verified_rounded, color: Colors.white),
+                            SizedBox(width: 10),
+                            Text(
+                              'Verification Status',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _buildVerificationPill('Image', _verificationStatus('image')),
+                            _buildVerificationPill('Legal', _verificationStatus('legal')),
+                            _buildVerificationPill('Owner Intent', _verificationStatus('ownerIntent')),
+                          ],
                         ),
                       ],
                     ),
@@ -271,13 +372,18 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.white, cardTint],
+                      ),
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: primaryBlue.withOpacity(0.1)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: primaryBlue.withOpacity(0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
@@ -311,8 +417,9 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                           '${widget.apartment.ward}, ${widget.apartment.commune}',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey[800],
+                            color: const Color(0xFF2A3550),
                             height: 1.5,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -325,13 +432,18 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.white, cardTint],
+                      ),
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: primaryBlue.withOpacity(0.1)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: primaryBlue.withOpacity(0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
@@ -372,13 +484,18 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.white, cardTint],
+                      ),
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: primaryBlue.withOpacity(0.1)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: primaryBlue.withOpacity(0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
@@ -414,7 +531,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                               : 'No detailed description available for this property.',
                           style: TextStyle(
                             fontSize: 15,
-                            color: Colors.grey[700],
+                            color: const Color(0xFF4F5D79),
                             height: 1.6,
                           ),
                         ),
@@ -431,10 +548,14 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
       bottomSheet: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, cardTint],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: primaryBlue.withOpacity(0.15),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -449,8 +570,16 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: primaryBlue.withOpacity(0.1),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: primaryBlue.withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryBlue.withOpacity(0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: IconButton(
                   onPressed: () {},
@@ -478,7 +607,8 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    elevation: 0,
+                    elevation: 6,
+                    shadowColor: primaryBlue.withOpacity(0.45),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -496,6 +626,90 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  String _verificationStatus(String key) {
+    final dynamic status =
+        widget.apartment.verifications?[key]?['status']?.toString();
+    if (status == null || status.isEmpty) return 'Pending';
+    return status;
+  }
+
+  Widget _buildHighlightChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: primaryBlue.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryBlue.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: primaryBlue),
+          const SizedBox(width: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 170),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF33415F),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationPill(String label, String status) {
+    final bool isApproved = status.toLowerCase() == 'approved';
+    final Color badgeColor = isApproved ? accentYellow : Colors.white;
+    final Color textColor = isApproved ? const Color(0xFF8A5A00) : Colors.white;
+    final Color borderColor =
+        isApproved ? accentYellow.withOpacity(0.5) : Colors.white54;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label:',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: badgeColor,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: borderColor),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -535,23 +749,30 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: primaryBlue.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: primaryBlue.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: Colors.grey[500]),
+              Icon(icon, size: 16, color: primaryBlue.withOpacity(0.7)),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF5A6986),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

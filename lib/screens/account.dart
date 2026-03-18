@@ -239,7 +239,7 @@ class _AccountScreenState extends State<AccountScreen> {
             _sectionCard(
               child: Column(
                 children: [
-                  _menuTile(Icons.favorite_outline, Colors.redAccent, 'Saved Properties', 'Your wishlist'),
+                  _menuTile(Icons.favorite_outline, Colors.redAccent, 'My Properties', 'Your apartments'),
                   _divider(),
                   _menuTile(Icons.calendar_month_outlined, Colors.teal, 'My Appointments', 'Schedule & history', onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => MyAppointmentsScreen(userId: user.id)));

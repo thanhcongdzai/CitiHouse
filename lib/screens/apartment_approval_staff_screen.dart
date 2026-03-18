@@ -48,12 +48,8 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
             final v = apt.verifications;
             if (v == null) return false;
             
-            final imgStatus = v['image']?['status'];
-            final legStatus = v['legal']?['status'];
-            final oiStatus = v['ownerIntent']?['status'];
-            
-            // Only keep apartments that are NOT fully approved yet
-            return imgStatus != 'Approved' || legStatus != 'Approved' || oiStatus != 'Approved';
+            // Only keep apartments that are in Pending state (need processing or final publish)
+            return apt.houseStatus == 'Pending';
           }).toList();
           
           _isLoading = false;

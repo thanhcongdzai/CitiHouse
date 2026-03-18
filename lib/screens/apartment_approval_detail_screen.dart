@@ -108,6 +108,150 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
     }
   }
 
+  Future<void> _showConfirmPublishDialog() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Xác nhận cho đăng', style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
+        content: const Text('Bạn có chắc chắn muốn duyệt không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[600],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Đồng ý'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _approveAndPublish();
+    }
+  }
+
+  Future<void> _approveAndPublish() async {
+    setState(() => _isProcessing = true);
+    try {
+      final v = _currentApt.verifications ?? {};
+      final updatedApt = {
+        'id': _currentApt.id,
+        'title': _currentApt.title,
+        'subject': _currentApt.subject,
+        'description': _currentApt.description,
+        'price': _currentApt.price,
+        'displayCode': _currentApt.displayCode,
+        'imageUrl': _currentApt.imageUrl,
+        'houseStatus': 'Available', // Update status here
+        'location': {
+          'ward': _currentApt.ward,
+          'commune': _currentApt.commune,
+        },
+        'projectInfo': {
+          'project': _currentApt.project,
+          'building': _currentApt.building,
+          'floor': _currentApt.floor,
+          'apartmentNumber': _currentApt.apartmentNumber,
+        },
+        'verifications': v,
+      };
+
+      final response = await http.put(
+        Uri.parse('http://127.0.0.1:8000/api/apartments/${_currentApt.id}/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updatedApt),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
+                  SizedBox(width: 12),
+                  Text('Duyệt thành công', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: const Text('Bài đăng đã được duyệt.', style: TextStyle(fontSize: 16)),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(context, true);
+                  },
+                  child: const Text('Đóng'),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi: ${response.statusCode}'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi kết nối: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  Future<void> _showConfirmStepDialog(String stepKey, String title) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Xác nhận duyệt', style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
+        content: Text('Bạn có chắc chắn đánh dấu mục "$title" là hợp lệ và đã được duyệt?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Đồng ý'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _approveStep(stepKey);
+    }
+  }
+
   Future<void> _approveStep(String stepKey) async {
     setState(() => _isProcessing = true);
     try {
@@ -150,7 +294,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Đã duyệt $stepKey!'),
+              content: Text('Đã duyệt $stepKey!'),
               backgroundColor: Colors.green[600],
             ),
           );
@@ -283,21 +427,21 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
                   '1. Hình Ảnh Thực Tế (Image)',
                   imgMap,
                   Icons.image_rounded,
-                  () => _approveStep('image'),
+                  () => _showConfirmStepDialog('image', 'Hình Ảnh Thực Tế'),
                 ),
                 const SizedBox(height: 12),
                 _buildApprovalStep(
                   '2. Giấy Tờ Pháp Lý (Legal)',
                   legMap,
                   Icons.gavel_rounded,
-                  () => _approveStep('legal'),
+                  () => _showConfirmStepDialog('legal', 'Giấy Tờ Pháp Lý'),
                 ),
                 const SizedBox(height: 12),
                 _buildApprovalStep(
                   '3. Xác Nhận Chủ Nhà (Owner Intent)',
                   oiMap,
                   Icons.verified_user_rounded,
-                  () => _approveStep('ownerIntent'),
+                  () => _showConfirmStepDialog('ownerIntent', 'Xác Nhận Chủ Nhà'),
                 ),
                 const SizedBox(height: 100), // spacing for bottom button
               ],
@@ -354,7 +498,48 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
                 ),
               ),
             )
-          : null,
+          : (imgMap['status'] == 'Approved' && legMap['status'] == 'Approved' && oiMap['status'] == 'Approved')
+              ? Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, -5),
+                      )
+                    ],
+                  ),
+                  child: SafeArea(
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[600],
+                          foregroundColor: Colors.white,
+                          elevation: 8,
+                          shadowColor: Colors.green.withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _isProcessing ? null : _showConfirmPublishDialog,
+                        icon: const Icon(Icons.check_circle_rounded),
+                        label: const Text(
+                          'DUYỆT VÀ CHO ĐĂNG',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
     );
   }
 
