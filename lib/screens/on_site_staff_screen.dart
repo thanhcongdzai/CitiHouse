@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 import 'on_site_staff_detail_screen.dart';
 import 'staff_drawer.dart';
@@ -43,7 +44,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://127.0.0.1:8000/api/viewing-appointments/'),
+        ApiConfig.uri('/api/viewing-appointments/'),
       );
 
       if (response.statusCode == 200) {
@@ -61,7 +62,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
           try {
             if (apartmentId.isNotEmpty) {
               final aRes = await http.get(
-                Uri.parse('http://127.0.0.1:8000/api/apartments/$apartmentId/'),
+                ApiConfig.uri('/api/apartments/$apartmentId/'),
               );
               if (aRes.statusCode == 200) {
                 apartmentData = json.decode(utf8.decode(aRes.bodyBytes));
@@ -72,7 +73,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
           try {
             if (userId.isNotEmpty) {
               final uRes = await http.get(
-                Uri.parse('http://127.0.0.1:8000/api/users/$userId/'),
+                ApiConfig.uri('/api/users/$userId/'),
               );
               if (uRes.statusCode == 200) {
                 userData = json.decode(utf8.decode(uRes.bodyBytes));

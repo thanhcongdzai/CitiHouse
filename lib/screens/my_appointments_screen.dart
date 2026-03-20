@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'package:intl/intl.dart';
 
 class MyAppointmentsScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
   Future<void> _fetchAppointments() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/viewing-appointments/'));
+      final response = await http.get(ApiConfig.uri('/api/viewing-appointments/'));
       if (response.statusCode == 200) {
         final List<dynamic> all = json.decode(utf8.decode(response.bodyBytes));
         

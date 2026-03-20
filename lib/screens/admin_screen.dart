@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/user.dart';
 import 'staff_drawer.dart';
@@ -58,7 +59,7 @@ class _AdminScreenState extends State<AdminScreen> {
     });
     try {
       final response = await http.get(
-        Uri.parse('http://127.0.0.1:8000/api/viewing-appointments/'),
+        ApiConfig.uri('/api/viewing-appointments/'),
       );
       if (response.statusCode == 200) {
         final List<dynamic> raw = json.decode(utf8.decode(response.bodyBytes));

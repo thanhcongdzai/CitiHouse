@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 
 class UploadAvatarScreen extends StatefulWidget {
@@ -36,7 +37,7 @@ class _UploadAvatarScreenState extends State<UploadAvatarScreen> {
 
     final bool hasAvatar = widget.currentUser.image != null && widget.currentUser.image!.isNotEmpty;
     final String method = hasAvatar ? 'PUT' : 'POST';
-    final String url = 'http://127.0.0.1:8000/api/users/${widget.currentUser.id}/image/';
+    final String url = ApiConfig.url('/api/users/${widget.currentUser.id}/image/');
 
     try {
       var request = http.MultipartRequest(method, Uri.parse(url));

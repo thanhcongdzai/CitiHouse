@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'package:intl/intl.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -85,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/users/'),
+        ApiConfig.uri('/api/users/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(userData),
       );

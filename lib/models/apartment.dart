@@ -33,7 +33,23 @@ class Apartment {
     this.verifications,
   });
 
+  static String _parseImageUrl(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value.trim();
+    if (value is List) {
+      return value
+          .map((e) => e?.toString().trim() ?? '')
+          .where((e) => e.isNotEmpty)
+          .join(',');
+    }
+    return value.toString().trim();
+  }
+
   factory Apartment.fromJson(Map<String, dynamic> json) {
+    final String resolvedImageUrl = _parseImageUrl(
+      json['userImageUrl'] ?? json['imageUrl'],
+    );
+
     return Apartment(
       id: json['id']?.toString() ?? json['_id']?['\$oid']?.toString() ?? json['_id']?.toString() ?? '',
       title: json['title'] as String? ?? 'No Title',
@@ -47,7 +63,7 @@ class Apartment {
       floor: json['projectInfo']?['floor'] as int? ?? 0,
       apartmentNumber: json['projectInfo']?['apartmentNumber'] as String? ?? '',
       displayCode: json['displayCode'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String? ?? '',
+      imageUrl: resolvedImageUrl,
       houseStatus: json['houseStatus'] as String? ?? '',
       verifications: json['verifications'] as Map<String, dynamic>?,
     );

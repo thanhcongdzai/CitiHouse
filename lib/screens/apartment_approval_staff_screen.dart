@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 import '../models/apartment.dart';
 import 'staff_drawer.dart';
@@ -38,7 +39,7 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
   Future<void> _fetchPendingApartments() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/apartments/'));
+      final response = await http.get(ApiConfig.uri('/api/apartments/'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {

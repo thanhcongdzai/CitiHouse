@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'package:intl/intl.dart';
 import '../models/apartment.dart';
 import '../models/user.dart';
@@ -118,7 +119,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/viewing-appointments/'),
+        ApiConfig.uri('/api/viewing-appointments/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(body),
       );

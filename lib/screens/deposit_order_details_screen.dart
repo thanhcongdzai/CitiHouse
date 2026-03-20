@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../models/user.dart';
@@ -94,7 +95,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
       updatedData['approvedStaff'] = widget.currentUser.id;
 
       final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/deposit-orders/$orderId/'),
+        ApiConfig.uri('/api/deposit-orders/$orderId/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updatedData),
       );
@@ -166,7 +167,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
     });
 
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/users/$userId/'));
+      final response = await http.get(ApiConfig.uri('/api/users/$userId/'));
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {

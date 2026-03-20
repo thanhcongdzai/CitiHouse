@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/apartment.dart';
 import 'apartment_detail_screen.dart';
 
@@ -61,7 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> fetchApartments() async {
     try {
       final response =
-          await http.get(Uri.parse('http://127.0.0.1:8000/api/apartments/'));
+          await http.get(ApiConfig.uri('/api/apartments/'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {

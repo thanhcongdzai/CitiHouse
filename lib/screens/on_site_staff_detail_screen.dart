@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 import 'create_deposit_order_screen.dart';
 
@@ -48,7 +49,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       updated['status'] = newStatus;
 
       final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/viewing-appointments/$id/'),
+        ApiConfig.uri('/api/viewing-appointments/$id/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updated),
       );
@@ -172,7 +173,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       updated['staffInCharge'] = widget.currentUser.id;
 
       final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/viewing-appointments/$id/'),
+        ApiConfig.uri('/api/viewing-appointments/$id/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updated),
       );

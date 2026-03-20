@@ -31,22 +31,28 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/users/'));
+      final response = await http.get(
+          Uri.parse('https://7a22-203-205-29-5.ngrok-free.app/api/users/'));
 
       if (response.statusCode == 200) {
-        final List<dynamic> users = json.decode(utf8.decode(response.bodyBytes));
-        
+        final List<dynamic> users =
+            json.decode(utf8.decode(response.bodyBytes));
+
         final user = users.cast<Map<String, dynamic>>().firstWhere(
-          (u) => u['phone'] == _phoneController.text.trim() && u['password'] == _passwordController.text.trim(),
-          orElse: () => <String, dynamic>{}, // Return empty map if not found
-        );
+              (u) =>
+                  u['phone'] == _phoneController.text.trim() &&
+                  u['password'] == _passwordController.text.trim(),
+              orElse: () =>
+                  <String, dynamic>{}, // Return empty map if not found
+            );
 
         if (user.isNotEmpty) {
           if (user['isActive'] == true) {
             final userId = user['id']?.toString() ?? '';
             await AuthService.saveLoginState(userId);
             if (mounted) {
-              widget.onLoginSuccess(); // MainScreen's setState will replace the LoginScreen
+              widget
+                  .onLoginSuccess(); // MainScreen's setState will replace the LoginScreen
             }
           } else {
             _showError('This account is not eligible yet.');
@@ -113,7 +119,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
                     labelText: 'Phone Number',
-                    prefixIcon: Icon(Icons.phone_android_rounded, color: primaryBlue),
+                    prefixIcon:
+                        Icon(Icons.phone_android_rounded, color: primaryBlue),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(color: Colors.grey[300]!),
@@ -144,10 +151,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline_rounded, color: primaryBlue),
+                    prefixIcon:
+                        Icon(Icons.lock_outline_rounded, color: primaryBlue),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey[600],
                       ),
                       onPressed: () {
@@ -179,18 +189,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(content: Text('Feature coming soon...'))
-                       );
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Feature coming soon...')));
                     },
                     child: Text(
                       'Forgot Password?',
-                      style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: primaryBlue, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -214,25 +224,31 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 3),
                           )
                         : const Text(
                             'Login',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1),
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1),
                           ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account?", style: TextStyle(color: Colors.grey[700])),
+                    Text("Don't have an account?",
+                        style: TextStyle(color: Colors.grey[700])),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterScreen()),
                         );
                       },
                       child: Text(

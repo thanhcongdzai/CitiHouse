@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 import 'staff_drawer.dart';
 import 'deposit_order_details_screen.dart';
@@ -46,12 +47,12 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
 
     try {
       // Fetch Deposits
-      final depositRes = await http.get(Uri.parse('http://127.0.0.1:8000/api/deposit-orders/'));
+      final depositRes = await http.get(ApiConfig.uri('/api/deposit-orders/'));
       if (depositRes.statusCode != 200) throw Exception('Failed to load deposit orders');
       final fetchedDeposits = json.decode(utf8.decode(depositRes.bodyBytes)) as List<dynamic>;
 
       // Fetch Apartments
-      final aptRes = await http.get(Uri.parse('http://127.0.0.1:8000/api/apartments/'));
+      final aptRes = await http.get(ApiConfig.uri('/api/apartments/'));
       if (aptRes.statusCode != 200) throw Exception('Failed to load apartments');
       final apts = json.decode(utf8.decode(aptRes.bodyBytes)) as List<dynamic>;
 
@@ -70,7 +71,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
         final buyerId = deposit['buyerId']?.toString();
 
         if (staffId != null && staffId.isNotEmpty && !staffMap.containsKey(staffId)) {
-          final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/users/$staffId/'));
+          final res = await http.get(ApiConfig.uri('/api/users/$staffId/'));
           if (res.statusCode == 200) {
             final u = json.decode(utf8.decode(res.bodyBytes));
             staffMap[staffId] = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim();
@@ -80,7 +81,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
         }
 
         if (buyerId != null && buyerId.isNotEmpty && !buyerMap.containsKey(buyerId)) {
-          final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/users/$buyerId/'));
+          final res = await http.get(ApiConfig.uri('/api/users/$buyerId/'));
           if (res.statusCode == 200) {
             final u = json.decode(utf8.decode(res.bodyBytes));
             buyerMap[buyerId] = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim();

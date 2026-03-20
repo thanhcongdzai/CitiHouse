@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 import 'staff_drawer.dart';
 
@@ -35,7 +36,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
   Future<void> _fetchPendingUsers() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/users/'));
+      final response = await http.get(ApiConfig.uri('/api/users/'));
       if (response.statusCode == 200) {
         final List<dynamic> all = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
@@ -62,7 +63,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
       updated['isActive'] = true;
 
       final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/users/$userId/'),
+        ApiConfig.uri('/api/users/$userId/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updated),
       );
@@ -132,7 +133,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
 
     try {
       final response = await http.delete(
-        Uri.parse('http://127.0.0.1:8000/api/users/$userId/'),
+        ApiConfig.uri('/api/users/$userId/'),
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {

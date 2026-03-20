@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 import 'select_apartment_images_screen.dart';
 
@@ -67,16 +68,29 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     super.dispose();
   }
 
+  bool _isProjectUnoccupied(Map<String, dynamic> project) {
+    final occupiedBy = project['occupiedBy'];
+    if (occupiedBy == null) return true;
+    if (occupiedBy is String) return occupiedBy.trim().isEmpty;
+    if (occupiedBy is List) return occupiedBy.isEmpty;
+    if (occupiedBy is Map) return occupiedBy.isEmpty;
+    return false;
+  }
+
   Future<void> _fetchProjects() async {
     try {
-      final resp = await http.get(Uri.parse('http://127.0.0.1:8000/api/projects/'));
+      final resp = await http.get(ApiConfig.uri('/api/projects/'));
       if (resp.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(resp.bodyBytes));
         setState(() {
-          _allProjects = data
+          final projects = data
               .map((e) => Map<String, dynamic>.from(e))
-              .where((p) => p['occupiedBy'] == null)
               .toList();
+          final availableProjects =
+              projects.where(_isProjectUnoccupied).toList();
+
+          // Fallback: if backend format differs, still allow selecting projects.
+          _allProjects = availableProjects.isNotEmpty ? availableProjects : projects;
           final names = <String>{};
           for (var p in _allProjects) {
             if (p['project'] != null && p['project'].toString().isNotEmpty) {
@@ -280,7 +294,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         // Multipart request: send data fields + image files together
         final request = http.MultipartRequest(
           'POST',
-          Uri.parse('http://127.0.0.1:8000/api/apartments/'),
+          ApiConfig.uri('/api/apartments/'),
         );
 
         // Send entire payload as JSON in the 'data' field
@@ -307,7 +321,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       } else {
         // No images: keep the original JSON POST
         resp = await http.post(
-          Uri.parse('http://127.0.0.1:8000/api/apartments/'),
+          ApiConfig.uri('/api/apartments/'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(payload),
         );

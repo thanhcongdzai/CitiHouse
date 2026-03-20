@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/apartment.dart';
 import '../models/user.dart';
 import 'apartment_images_screen.dart';
@@ -59,6 +60,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
         'price': _currentApt.price,
         'displayCode': _currentApt.displayCode,
         'imageUrl': _currentApt.imageUrl,
+        'userImageUrl': _currentApt.imageUrl,
         'houseStatus': _currentApt.houseStatus,
         'location': {
           'ward': _currentApt.ward,
@@ -74,7 +76,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
       };
 
       final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/apartments/${_currentApt.id}/'),
+        ApiConfig.uri('/api/apartments/${_currentApt.id}/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updatedApt),
       );
@@ -151,6 +153,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
         'price': _currentApt.price,
         'displayCode': _currentApt.displayCode,
         'imageUrl': _currentApt.imageUrl,
+        'userImageUrl': _currentApt.imageUrl,
         'houseStatus': 'Available', // Update status here
         'location': {
           'ward': _currentApt.ward,
@@ -166,7 +169,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
       };
 
       final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/apartments/${_currentApt.id}/'),
+        ApiConfig.uri('/api/apartments/${_currentApt.id}/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updatedApt),
       );
@@ -271,6 +274,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
         'price': _currentApt.price,
         'displayCode': _currentApt.displayCode,
         'imageUrl': _currentApt.imageUrl,
+        'userImageUrl': _currentApt.imageUrl,
         'houseStatus': _currentApt.houseStatus,
         'location': {
           'ward': _currentApt.ward,
@@ -286,7 +290,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
       };
 
       final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/apartments/${_currentApt.id}/'),
+        ApiConfig.uri('/api/apartments/${_currentApt.id}/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updatedApt),
       );

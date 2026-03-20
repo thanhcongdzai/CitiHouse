@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 import 'my_appointments_screen.dart';
 import 'my_deposit_orders_screen.dart';
@@ -37,7 +38,7 @@ class _AccountScreenState extends State<AccountScreen> {
     if (userId == null || userId.isEmpty) return;
     try {
       final res = await http.get(
-        Uri.parse('http://127.0.0.1:8000/api/deposit-orders/buyer/$userId/'),
+        ApiConfig.uri('/api/deposit-orders/buyer/$userId/'),
       );
       if (res.statusCode == 200) {
         final data = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;

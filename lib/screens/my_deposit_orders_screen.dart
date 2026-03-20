@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'package:intl/intl.dart';
 
 class MyDepositOrdersScreen extends StatefulWidget {
@@ -35,7 +36,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
 
     try {
       final res = await http.get(
-        Uri.parse('http://127.0.0.1:8000/api/deposit-orders/buyer/${widget.userId}/'),
+        ApiConfig.uri('/api/deposit-orders/buyer/${widget.userId}/'),
       );
 
       if (res.statusCode != 200) throw Exception('Lỗi server: ${res.statusCode}');
@@ -43,7 +44,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
       final orders = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;
 
       // Fetch apartment names
-      final aptRes = await http.get(Uri.parse('http://127.0.0.1:8000/api/apartments/'));
+      final aptRes = await http.get(ApiConfig.uri('/api/apartments/'));
       final Map<String, String> aptMap = {};
       if (aptRes.statusCode == 200) {
         final apts = json.decode(utf8.decode(aptRes.bodyBytes)) as List<dynamic>;

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/user.dart';
 
 class CreateDepositOrderScreen extends StatefulWidget {
@@ -50,7 +51,7 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
 
   Future<void> _fetchApartmentInfo() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/apartments/${widget.apartmentId}/'));
+      final response = await http.get(ApiConfig.uri('/api/apartments/${widget.apartmentId}/'));
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
@@ -92,7 +93,7 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
     });
 
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/users/'));
+      final response = await http.get(ApiConfig.uri('/api/users/'));
       if (response.statusCode == 200) {
         final List<dynamic> users = json.decode(utf8.decode(response.bodyBytes));
         
@@ -160,7 +161,7 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
 
     try {
       final depositResponse = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/deposit-orders/'),
+        ApiConfig.uri('/api/deposit-orders/'),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: json.encode(payload),
       );
@@ -169,7 +170,7 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
         // Also update the appointment status to 'Da yeu cau coc'
         try {
           await http.put(
-            Uri.parse('http://127.0.0.1:8000/api/viewing-appointments/${widget.appointmentId}/'),
+            ApiConfig.uri('/api/viewing-appointments/${widget.appointmentId}/'),
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
             body: json.encode({'status': 'Da yeu cau coc'}),
           );
