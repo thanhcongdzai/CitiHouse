@@ -284,14 +284,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           Uri.parse('http://127.0.0.1:8000/api/apartments/'),
         );
 
-        // Add payload data as form fields
-        for (var entry in payload.entries) {
-          if (entry.value is Map || entry.value is List) {
-            request.fields[entry.key] = json.encode(entry.value);
-          } else {
-            request.fields[entry.key] = entry.value.toString();
-          }
-        }
+        // Send entire payload as JSON in the 'data' field
+        request.fields['data'] = json.encode(payload);
 
         // Add cover image first
         if (_coverImage != null) {
