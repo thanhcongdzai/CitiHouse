@@ -250,7 +250,6 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         "apartmentNumber": _selectedUnit!['apartmentNumber'] ?? '',
       },
       "displayCode": _generateDisplayCode(),
-      "imageUrl": "",
       "houseStatus": "Pending",
       "owner": {},
       "verifications": {
