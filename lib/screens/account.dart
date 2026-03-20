@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/user.dart';
 import 'my_appointments_screen.dart';
 import 'my_deposit_orders_screen.dart';
+import 'upload_avatar_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   final User? currentUser;
@@ -85,34 +86,49 @@ class _AccountScreenState extends State<AccountScreen> {
                       Row(
                         children: [
                           // Avatar
-                          Stack(
-                            children: [
-                              CircleAvatar(
-                                radius: 38,
-                                backgroundColor: Colors.white,
-                                child: CircleAvatar(
-                                  radius: 34,
-                                  backgroundColor: secondary,
-                                  child: Text(
-                                    initials,
-                                    style: const TextStyle(
-                                        fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => UploadAvatarScreen(currentUser: user),
+                                ),
+                              );
+                            },
+                            child: Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 38,
+                                  backgroundColor: Colors.white,
+                                  child: CircleAvatar(
+                                    radius: 34,
+                                    backgroundColor: secondary,
+                                    backgroundImage: (user.image != null && user.image!.isNotEmpty)
+                                        ? NetworkImage(user.image!)
+                                        : null,
+                                    child: (user.image == null || user.image!.isEmpty)
+                                        ? Text(
+                                            initials,
+                                            style: const TextStyle(
+                                                fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                                          )
+                                        : null,
                                   ),
                                 ),
-                              ),
-                              Positioned(
-                                bottom: 2,
-                                right: 2,
-                                child: Container(
-                                  width: 16, height: 16,
-                                  decoration: BoxDecoration(
-                                    color: Colors.greenAccent,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
+                                Positioned(
+                                  bottom: 2,
+                                  right: 2,
+                                  child: Container(
+                                    width: 16, height: 16,
+                                    decoration: BoxDecoration(
+                                      color: Colors.greenAccent,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(

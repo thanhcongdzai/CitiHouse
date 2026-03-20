@@ -11,6 +11,7 @@ class User {
   final bool isActive;
   final String role;
   final String email;
+  final String? image;
 
   User({
     required this.id,
@@ -25,6 +26,7 @@ class User {
     required this.isActive,
     required this.role,
     required this.email,
+    this.image,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class User {
       isActive: json['isActive'] == true || json['isActive'] == 'true' || json['isActive'] == 1,
       role: json['role'] ?? 'User',
       email: json['email'] ?? '',
+      image: json['image'],
     );
   }
 
@@ -58,6 +61,7 @@ class User {
       'isActive': isActive,
       'role': role,
       'email': email,
+      'image': image,
     };
   }
 }
