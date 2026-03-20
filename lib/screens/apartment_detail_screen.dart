@@ -37,21 +37,20 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Generate some sample images for the carousel since the API currently provides one image
-    final bool hasValidImage = widget.apartment.imageUrl.isNotEmpty &&
-        widget.apartment.imageUrl.startsWith('http') &&
-        widget.apartment.imageUrl != 'https://image1.com';
+    final List<String> apiImages = widget.apartment.imageUrl
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty && e.startsWith('http') && e != 'https://image1.com')
+        .toList();
 
-    final String mainImage = hasValidImage
-        ? widget.apartment.imageUrl
-        : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=60';
-
-    final List<String> images = [
-      mainImage,
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&auto=format&fit=crop&q=60',
-    ];
+    final List<String> images = apiImages.isNotEmpty
+        ? apiImages
+        : [
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&auto=format&fit=crop&q=60',
+          ];
 
     return Scaffold(
       backgroundColor: bgBottom,

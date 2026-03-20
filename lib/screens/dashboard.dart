@@ -690,11 +690,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Sample image logic based on instructions
                   const sampleImage =
                       'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&auto=format&fit=crop&q=60';
-                  final bool hasValidImage = item.imageUrl.isNotEmpty &&
-                      item.imageUrl.startsWith('http') &&
-                      item.imageUrl != 'https://image1.com';
+                  final String firstImage = item.imageUrl.split(',').first.trim();
+                  final bool hasValidImage = firstImage.isNotEmpty &&
+                      firstImage.startsWith('http') &&
+                      firstImage != 'https://image1.com';
                   final imageToShow =
-                      hasValidImage ? item.imageUrl : sampleImage;
+                      hasValidImage ? firstImage : sampleImage;
 
                   return GestureDetector(
                     onTap: () async {

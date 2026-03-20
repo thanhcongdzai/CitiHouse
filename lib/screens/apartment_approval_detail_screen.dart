@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/apartment.dart';
 import '../models/user.dart';
+import 'apartment_images_screen.dart';
 
 class ApartmentApprovalDetailScreen extends StatefulWidget {
   final Apartment apartment;
@@ -428,6 +429,14 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
                   imgMap,
                   Icons.image_rounded,
                   () => _showConfirmStepDialog('image', 'Hình Ảnh Thực Tế'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ApartmentImagesScreen(apartment: _currentApt),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
                 _buildApprovalStep(
@@ -543,20 +552,22 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
     );
   }
 
-  Widget _buildApprovalStep(String title, Map<String, dynamic> statusMap, IconData icon, VoidCallback onApprove) {
+  Widget _buildApprovalStep(String title, Map<String, dynamic> statusMap, IconData icon, VoidCallback onApprove, {VoidCallback? onTap}) {
     final status = statusMap['status'] ?? 'Not Verified';
     final bool isApproved = status == 'Approved';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isApproved ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
-          width: 2,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isApproved ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+            width: 2,
+          ),
         ),
-      ),
       child: Row(
         children: [
           Container(
@@ -615,6 +626,7 @@ class _ApartmentApprovalDetailScreenState extends State<ApartmentApprovalDetailS
                     child: const Text('Duyệt', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
         ],
+      ),
       ),
     );
   }

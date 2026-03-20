@@ -186,10 +186,11 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
                           final apt = displayedApartments[index];
                           const sampleImage =
                               'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&auto=format&fit=crop&q=60';
-                          final bool hasValidImage = apt.imageUrl.isNotEmpty &&
-                              apt.imageUrl.startsWith('http') &&
-                              apt.imageUrl != 'https://image1.com';
-                          final imageToShow = hasValidImage ? apt.imageUrl : sampleImage;
+                          final String firstImage = apt.imageUrl.split(',').first.trim();
+                          final bool hasValidImage = firstImage.isNotEmpty &&
+                              firstImage.startsWith('http') &&
+                              firstImage != 'https://image1.com';
+                          final imageToShow = hasValidImage ? firstImage : sampleImage;
                           
                           return GestureDetector(
                             onTap: () async {
