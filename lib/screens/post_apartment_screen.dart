@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
+import 'select_apartment_images_screen.dart';
 
 class PostApartmentScreen extends StatefulWidget {
   final User? currentUser;
@@ -46,6 +48,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
 
   bool _isSubmitting = false;
 
+  // Image upload
+  File? _coverImage;
+  List<File> _subImages = [];
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +73,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       if (resp.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(resp.bodyBytes));
         setState(() {
-          _allProjects = data.map((e) => Map<String, dynamic>.from(e)).toList();
+          _allProjects = data
+              .map((e) => Map<String, dynamic>.from(e))
+              .where((p) => p['occupiedBy'] == null)
+              .toList();
           final names = <String>{};
           for (var p in _allProjects) {
             if (p['project'] != null && p['project'].toString().isNotEmpty) {
@@ -192,6 +201,24 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     return 'CH-$digits';
   }
 
+  Future<void> _navigateToImagePicker() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SelectApartmentImagesScreen(
+          initialCoverImage: _coverImage,
+          initialSubImages: _subImages,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _coverImage = result['coverImage'] as File?;
+        _subImages = List<File>.from(result['subImages'] ?? []);
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedUnit == null) {
@@ -224,7 +251,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       },
       "displayCode": _generateDisplayCode(),
       "imageUrl": "",
-      "houseStatus": "Available",
+      "houseStatus": "Pending",
       "owner": {},
       "verifications": {
         "image": {
@@ -247,11 +274,51 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     };
 
     try {
-      final resp = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/apartments/'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      );
+      final bool hasImages = _coverImage != null || _subImages.isNotEmpty;
+      http.Response resp;
+
+      if (hasImages) {
+        // Multipart request: send data fields + image files together
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse('http://127.0.0.1:8000/api/apartments/'),
+        );
+
+        // Add payload data as form fields
+        for (var entry in payload.entries) {
+          if (entry.value is Map || entry.value is List) {
+            request.fields[entry.key] = json.encode(entry.value);
+          } else {
+            request.fields[entry.key] = entry.value.toString();
+          }
+        }
+
+        // Add cover image first
+        if (_coverImage != null) {
+          request.files.add(await http.MultipartFile.fromPath(
+            'userImage',
+            _coverImage!.path,
+          ));
+        }
+
+        // Add sub images
+        for (var img in _subImages) {
+          request.files.add(await http.MultipartFile.fromPath(
+            'userImages',
+            img.path,
+          ));
+        }
+
+        final streamedResp = await request.send();
+        resp = await http.Response.fromStream(streamedResp);
+      } else {
+        // No images: keep the original JSON POST
+        resp = await http.post(
+          Uri.parse('http://127.0.0.1:8000/api/apartments/'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(payload),
+        );
+      }
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
@@ -424,6 +491,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     const SizedBox(height: 16),
                     _buildLocationPreview(),
                   ],
+                  const SizedBox(height: 28),
+                  _buildSectionHeader('Hình ảnh', Icons.photo_camera_rounded),
+                  const SizedBox(height: 12),
+                  _buildImageUploadButton(),
                   const SizedBox(height: 36),
                   _buildSubmitButton(),
                   const SizedBox(height: 32),
@@ -628,6 +699,142 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageUploadButton() {
+    final int totalImages = (_coverImage != null ? 1 : 0) + _subImages.length;
+    return GestureDetector(
+      onTap: _navigateToImagePicker,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: totalImages > 0
+                ? primaryBlue.withValues(alpha: 0.3)
+                : Colors.grey[300]!,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: primaryBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    totalImages > 0
+                        ? Icons.photo_library_rounded
+                        : Icons.add_photo_alternate_outlined,
+                    color: primaryBlue,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        totalImages > 0
+                            ? '$totalImages ảnh đã chọn'
+                            : 'Thêm hình ảnh',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: totalImages > 0 ? primaryBlue : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        totalImages > 0
+                            ? 'Nhấn để thay đổi'
+                            : 'Chọn ảnh bìa và ảnh chi tiết',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    color: Colors.grey[400], size: 28),
+              ],
+            ),
+            // Thumbnail preview
+            if (totalImages > 0) ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 72,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    if (_coverImage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(_coverImage!,
+                                  width: 72, height: 72, fit: BoxFit.cover),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: primaryBlue.withValues(alpha: 0.85),
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Bìa',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ..._subImages.map((img) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.file(img,
+                                width: 72, height: 72, fit: BoxFit.cover),
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
