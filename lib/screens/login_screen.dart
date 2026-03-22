@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
 
@@ -31,8 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await http.get(
-          Uri.parse('https://7a22-203-205-29-5.ngrok-free.app/api/users/'));
+      final response = await http.get(ApiConfig.uri('/api/users/'));
 
       if (response.statusCode == 200) {
         final List<dynamic> users =
