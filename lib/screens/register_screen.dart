@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +20,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  final RegExp _emailRegex = RegExp(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+  final RegExp _phoneRegex = RegExp(r'^\d{10}$');
+  final RegExp _cccdRegex = RegExp(r'^\d{12}$');
+  final RegExp _passwordLetterRegex = RegExp(r'[A-Za-z]');
+  final RegExp _passwordUppercaseRegex = RegExp(r'[A-Z]');
+  final RegExp _passwordNumberRegex = RegExp(r'\d');
 
   // Form Controllers
   final TextEditingController _firstNameController = TextEditingController();
@@ -33,12 +40,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _selectedGender = 'Male';
   final List<String> _genders = ['Male', 'Female', 'Other'];
 
+  bool _isAtLeast18(DateTime dateOfBirth) {
+    final now = DateTime.now();
+    final age = now.year - dateOfBirth.year;
+    final hasHadBirthdayThisYear = now.month > dateOfBirth.month ||
+        (now.month == dateOfBirth.month && now.day >= dateOfBirth.day);
+    return age > 18 || (age == 18 && hasHadBirthdayThisYear);
+  }
+
   Future<void> _selectDate(BuildContext context) async {
+    final today = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
+      initialDate: _selectedDate ?? DateTime(today.year - 18, today.month, today.day),
       firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      lastDate: today,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -53,6 +69,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       },
     );
     if (picked != null && picked != _selectedDate) {
+      if (!_isAtLeast18(picked)) {
+        _showError('You must be at least 18 years old to register');
+        return;
+      }
+
       setState(() {
         _selectedDate = picked;
       });
@@ -63,6 +84,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
       _showError('Please select your Date of Birth');
+      return;
+    }
+    if (!_isAtLeast18(_selectedDate!)) {
+      _showError('You must be at least 18 years old to register');
       return;
     }
 
@@ -189,7 +214,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   label: 'Phone Number',
                   icon: Icons.phone_android_rounded,
                   keyboardType: TextInputType.phone,
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Required';
+                    if (!_phoneRegex.hasMatch(v.trim())) {
+                      return 'Phone number must be exactly 10 digits';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -200,8 +235,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Required';
-                    if (!v.contains('@')) return 'Invalid email';
+                    if (v == null || v.trim().isEmpty) return 'Required';
+                    if (!_emailRegex.hasMatch(v.trim())) return 'Invalid email format';
                     return null;
                   },
                 ),
@@ -279,7 +314,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   label: 'CCCD / ID Number',
                   icon: Icons.badge_outlined,
                   keyboardType: TextInputType.number,
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(12),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Required';
+                    if (!_cccdRegex.hasMatch(v.trim())) {
+                      return 'CCCD must be exactly 12 digits';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -332,6 +377,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value.length < 6) {
                       return 'Must be at least 6 characters';
                     }
+                    if (!_passwordLetterRegex.hasMatch(value) ||
+                        !_passwordUppercaseRegex.hasMatch(value) ||
+                        !_passwordNumberRegex.hasMatch(value)) {
+                      return 'Password must include letters, 1 uppercase letter, and 1 number';
+                    }
                     return null;
                   },
                 ),
@@ -380,11 +430,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: primaryBlue),
