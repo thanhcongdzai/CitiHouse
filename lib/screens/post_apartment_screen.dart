@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -233,6 +233,56 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     }
   }
 
+  String? _extractApartmentIdFromResponseBody(String responseBody) {
+    if (responseBody.trim().isEmpty) return null;
+
+    try {
+      final decoded = json.decode(responseBody);
+      if (decoded is! Map<String, dynamic>) return null;
+
+      String? readId(Map<String, dynamic> map) {
+        final raw = map['_id'] ?? map['id'];
+        if (raw == null) return null;
+        final id = raw.toString().trim();
+        return id.isEmpty ? null : id;
+      }
+
+      final directId = readId(decoded);
+      if (directId != null) return directId;
+
+      final data = decoded['data'];
+      if (data is Map<String, dynamic>) {
+        final dataId = readId(data);
+        if (dataId != null) return dataId;
+      }
+
+      final apartment = decoded['apartment'];
+      if (apartment is Map<String, dynamic>) {
+        final apartmentId = readId(apartment);
+        if (apartmentId != null) return apartmentId;
+      }
+    } catch (_) {
+      return null;
+    }
+
+    return null;
+  }
+
+  Future<void> _updateProjectOccupiedBy({
+    required String projectId,
+    required String apartmentId,
+  }) async {
+    final headers = {'Content-Type': 'application/json'};
+    final body = json.encode({'occupiedBy': apartmentId});
+    final response = await http.put(
+      ApiConfig.uri('/api/projects/$projectId/'),
+      headers: headers,
+      body: body,
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    throw Exception('Update occupiedBy failed (${response.statusCode})');
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedUnit == null) {
@@ -327,10 +377,34 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         );
       }
 
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
-
       if (resp.statusCode == 201 || resp.statusCode == 200) {
+        final projectId = (_selectedUnit!['_id'] ?? _selectedUnit!['id'] ?? '')
+            .toString()
+            .trim();
+        final apartmentId =
+            _extractApartmentIdFromResponseBody(utf8.decode(resp.bodyBytes));
+
+        if (projectId.isEmpty || apartmentId == null || apartmentId.isEmpty) {
+          if (!mounted) return;
+          setState(() => _isSubmitting = false);
+          _showError('Dang nha thanh cong nhung khong lay duoc du lieu de cap nhat occupiedBy.');
+          return;
+        }
+
+        try {
+          await _updateProjectOccupiedBy(
+            projectId: projectId,
+            apartmentId: apartmentId,
+          );
+        } catch (e) {
+          if (!mounted) return;
+          setState(() => _isSubmitting = false);
+          _showError('Dang nha thanh cong nhung cap nhat occupiedBy that bai: $e');
+          return;
+        }
+
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -348,6 +422,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         );
         Navigator.pop(context);
       } else {
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
         _showError('Lỗi ${resp.statusCode}: ${resp.body}');
       }
     } catch (e) {
@@ -387,7 +463,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Đăng nhà môi giới',
+          'Post Broker Property',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -403,11 +479,11 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _buildSectionHeader('Thông tin cơ bản', Icons.info_outline_rounded),
+                  _buildSectionHeader('Basic Information', Icons.info_outline_rounded),
                   const SizedBox(height: 12),
                   _buildTextField(
                     controller: _titleCtrl,
-                    label: 'Tiêu đề *',
+                    label: 'Title *',
                     hint: 'Nhập tiêu đề bài đăng',
                     icon: Icons.title_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tiêu đề' : null,
@@ -415,7 +491,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _subjectCtrl,
-                    label: 'Chủ đề *',
+                    label: 'Subject *',
                     hint: 'Nhập chủ đề',
                     icon: Icons.subject_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập chủ đề' : null,
@@ -423,15 +499,15 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _descCtrl,
-                    label: 'Mô tả',
-                    hint: 'Mô tả chi tiết về căn hộ...',
+                    label: 'Description',
+                    hint: 'Description chi tiết về căn hộ...',
                     icon: Icons.description_rounded,
                     maxLines: 4,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _priceCtrl,
-                    label: 'Giá (VND) *',
+                    label: 'Price (VND) *',
                     hint: 'Nhập giá (VD: 3500000000)',
                     icon: Icons.attach_money_rounded,
                     keyboardType: TextInputType.number,
@@ -443,10 +519,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     },
                   ),
                   const SizedBox(height: 28),
-                  _buildSectionHeader('Thông tin dự án', Icons.business_rounded),
+                  _buildSectionHeader('Project Information', Icons.business_rounded),
                   const SizedBox(height: 12),
                   _buildDropdown<String>(
-                    label: 'Dự án *',
+                    label: 'Project *',
                     icon: Icons.location_city_rounded,
                     value: _selectedProject,
                     items: _projectOptions,
@@ -458,7 +534,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   if (_buildingOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<String>(
-                      label: 'Tòa nhà *',
+                      label: 'Building *',
                       icon: Icons.apartment_rounded,
                       value: _selectedBuilding,
                       items: _buildingOptions,
@@ -471,7 +547,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   if (_floorOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<int>(
-                      label: 'Tầng *',
+                      label: 'Floor *',
                       icon: Icons.layers_rounded,
                       value: _selectedFloor,
                       items: _floorOptions,
@@ -484,7 +560,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   if (_apartmentOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<String>(
-                      label: 'Số căn hộ *',
+                      label: 'Apartment number *',
                       icon: Icons.door_front_door_rounded,
                       value: _selectedApartmentNumber,
                       items: _apartmentOptions,
@@ -499,7 +575,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     _buildLocationPreview(),
                   ],
                   const SizedBox(height: 28),
-                  _buildSectionHeader('Hình ảnh', Icons.photo_camera_rounded),
+                  _buildSectionHeader('Images', Icons.photo_camera_rounded),
                   const SizedBox(height: 12),
                   _buildImageUploadButton(),
                   const SizedBox(height: 36),
@@ -888,7 +964,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     Icon(Icons.send_rounded, color: Colors.white, size: 22),
                     SizedBox(width: 12),
                     Text(
-                      'Đăng tin ngay',
+                      'Post now',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -903,3 +979,4 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     );
   }
 }
+

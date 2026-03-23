@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -19,19 +19,20 @@ class CreateDepositOrderScreen extends StatefulWidget {
   });
 
   @override
-  State<CreateDepositOrderScreen> createState() => _CreateDepositOrderScreenState();
+  State<CreateDepositOrderScreen> createState() =>
+      _CreateDepositOrderScreenState();
 }
 
 class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
   final Color primaryBlue = const Color.fromRGBO(35, 97, 219, 1);
   final Color accentYellow = const Color.fromRGBO(248, 192, 52, 1);
 
-  final TextEditingController _cccdController = TextEditingController();
-  
+  final TextEditingController _phoneController = TextEditingController();
+
   bool _isLoadingInfo = true;
   bool _isSearchingUser = false;
   bool _isSubmitting = false;
-  
+
   Map<String, dynamic>? _apartmentInfo;
   Map<String, dynamic>? _foundUser;
   double _depositAmount = 0;
@@ -45,23 +46,31 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
 
   @override
   void dispose() {
-    _cccdController.dispose();
+    _phoneController.dispose();
     super.dispose();
+  }
+
+  String _normalizePhone(String value) {
+    return value.replaceAll(RegExp(r'\D'), '');
   }
 
   Future<void> _fetchApartmentInfo() async {
     try {
-      final response = await http.get(ApiConfig.uri('/api/apartments/${widget.apartmentId}/'));
+      final response = await http
+          .get(ApiConfig.uri('/api/apartments/${widget.apartmentId}/'));
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
           _apartmentInfo = data;
-          
+
           double price = 0;
           if (data['price'] != null) {
             // Handle MongoDB $numberLong object or direct int/double
-            if (data['price'] is Map && data['price'].containsKey('\$numberLong')) {
-              price = double.tryParse(data['price']['\$numberLong'].toString()) ?? 0;
+            if (data['price'] is Map &&
+                data['price'].containsKey('\$numberLong')) {
+              price =
+                  double.tryParse(data['price']['\$numberLong'].toString()) ??
+                      0;
             } else {
               price = double.tryParse(data['price'].toString()) ?? 0;
             }
@@ -71,7 +80,8 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
         });
       } else {
         setState(() {
-          _error = 'Failed to load apartment info. Status: ${response.statusCode}';
+          _error =
+              'Failed to load apartment info. Status: ${response.statusCode}';
           _isLoadingInfo = false;
         });
       }
@@ -83,9 +93,9 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
     }
   }
 
-  Future<void> _searchUserByCCCD() async {
-    final cccd = _cccdController.text.trim();
-    if (cccd.isEmpty) return;
+  Future<void> _searchUserByPhone() async {
+    final phone = _normalizePhone(_phoneController.text.trim());
+    if (phone.isEmpty) return;
 
     setState(() {
       _isSearchingUser = true;
@@ -95,20 +105,21 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
     try {
       final response = await http.get(ApiConfig.uri('/api/users/'));
       if (response.statusCode == 200) {
-        final List<dynamic> users = json.decode(utf8.decode(response.bodyBytes));
-        
-        // Find user by cccd
+        final List<dynamic> users =
+            json.decode(utf8.decode(response.bodyBytes));
+
+        // Find user by phone
         final match = users.whereType<Map<String, dynamic>>().firstWhere(
-          (user) => user['cccd'] == cccd,
-          orElse: () => {},
-        );
+              (user) => _normalizePhone(user['phone']?.toString() ?? '') == phone,
+              orElse: () => {},
+            );
 
         setState(() {
           if (match.isNotEmpty) {
             _foundUser = match;
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Không tìm thấy người dùng với CCCD này!')),
+              const SnackBar(content: Text('No user found with this phone number!')),
             );
           }
         });
@@ -137,10 +148,12 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
 
     String buyerIdStr = '';
     final rawUserId = _foundUser!['_id'] ?? _foundUser!['id'];
-    
+
     if (rawUserId != null) {
       if (rawUserId is Map) {
-        buyerIdStr = rawUserId['\$oid']?.toString() ?? rawUserId['oid']?.toString() ?? '';
+        buyerIdStr = rawUserId['\$oid']?.toString() ??
+            rawUserId['oid']?.toString() ??
+            '';
       } else {
         buyerIdStr = rawUserId.toString();
       }
@@ -152,7 +165,7 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
       "staffId": widget.staffId,
       "buyerId": buyerIdStr,
       "depositAmount": _depositAmount,
-      "status": "Da thanh toan",
+      "status": "Cho thanh toan",
       "createdAt": DateTime.now().toUtc().toIso8601String(),
       "expiredAt": null,
       "paymentEvidence": "",
@@ -166,7 +179,24 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
         body: json.encode(payload),
       );
 
-      if (depositResponse.statusCode == 200 || depositResponse.statusCode == 201) {
+      if (depositResponse.statusCode == 200 ||
+          depositResponse.statusCode == 201) {
+        // Also update apartment houseStatus to inContract
+        try {
+          if (_apartmentInfo != null) {
+            final updatedApartment = Map<String, dynamic>.from(_apartmentInfo!);
+            updatedApartment['houseStatus'] = 'inContract';
+
+            await http.put(
+              ApiConfig.uri('/api/apartments/${widget.apartmentId}/'),
+              headers: {'Content-Type': 'application/json; charset=UTF-8'},
+              body: json.encode(updatedApartment),
+            );
+          }
+        } catch (_) {
+          // Silently fail - deposit was still created
+        }
+
         // Also update the appointment status to 'Da yeu cau coc'
         try {
           await http.put(
@@ -179,12 +209,16 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gửi yêu cầu đặt cọ thành công!'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Gửi yêu cầu đặt cọ thành công!'),
+              backgroundColor: Colors.green),
         );
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: ${depositResponse.statusCode} - ${depositResponse.body}')),
+          SnackBar(
+              content: Text(
+                  'Lỗi: ${depositResponse.statusCode} - ${depositResponse.body}')),
         );
       }
     } catch (e) {
@@ -213,7 +247,7 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
-          'Yêu cầu đặt cọc',
+          'Deposit Request',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
         ),
         foregroundColor: primaryBlue,
@@ -223,7 +257,9 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
       body: _isLoadingInfo
           ? Center(child: CircularProgressIndicator(color: primaryBlue))
           : _error != null
-              ? Center(child: Text(_error!, style: TextStyle(color: Colors.red[700])))
+              ? Center(
+                  child:
+                      Text(_error!, style: TextStyle(color: Colors.red[700])))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -237,7 +273,10 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4)),
                           ],
                         ),
                         child: Column(
@@ -245,15 +284,22 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.apartment_rounded, color: primaryBlue, size: 24),
+                                Icon(Icons.apartment_rounded,
+                                    color: primaryBlue, size: 24),
                                 const SizedBox(width: 10),
-                                const Text('Thông tin căn hộ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                const Text('Apartment Information',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold)),
                               ],
                             ),
                             const SizedBox(height: 16),
                             Text(
                               _apartmentInfo?['title'] ?? 'N/A',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -266,15 +312,23 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                               decoration: BoxDecoration(
                                 color: accentYellow.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: accentYellow.withOpacity(0.5)),
+                                border: Border.all(
+                                    color: accentYellow.withOpacity(0.5)),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Tiền cọc (12%):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  const Text('Tiền cọc (12%):',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16)),
                                   Text(
                                     _formatCurrency(_depositAmount),
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.orange[800]),
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18,
+                                        color: Colors.orange[800]),
                                   ),
                                 ],
                               ),
@@ -292,7 +346,10 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4)),
                           ],
                         ),
                         child: Column(
@@ -300,9 +357,13 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.person_search_rounded, color: primaryBlue, size: 24),
+                                Icon(Icons.person_search_rounded,
+                                    color: primaryBlue, size: 24),
                                 const SizedBox(width: 10),
-                                const Text('Tìm khách hàng (Người mua)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                const Text('Tìm khách hàng (Người mua)',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold)),
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -310,19 +371,21 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                               children: [
                                 Expanded(
                                   child: TextField(
-                                    controller: _cccdController,
-                                    keyboardType: TextInputType.number,
+                                    controller: _phoneController,
+                                    keyboardType: TextInputType.phone,
                                     decoration: InputDecoration(
-                                      hintText: 'Nhập CCCD...',
+                                      hintText: 'Enter phone number...',
                                       filled: true,
                                       fillColor: Colors.grey[100],
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 14),
                                     ),
-                                    onSubmitted: (_) => _searchUserByCCCD(),
+                                    onSubmitted: (_) => _searchUserByPhone(),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -330,15 +393,24 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                                   height: 48,
                                   width: 48,
                                   child: ElevatedButton(
-                                    onPressed: _isSearchingUser ? null : _searchUserByCCCD,
+                                    onPressed: _isSearchingUser
+                                        ? null
+                                        : _searchUserByPhone,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: primaryBlue,
                                       foregroundColor: Colors.white,
                                       padding: EdgeInsets.zero,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
                                     ),
                                     child: _isSearchingUser
-                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2))
                                         : const Icon(Icons.search_rounded),
                                   ),
                                 ),
@@ -351,20 +423,28 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.green.shade50,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.green.shade200),
+                                  border:
+                                      Border.all(color: Colors.green.shade200),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(Icons.check_circle_rounded, color: Colors.green[600], size: 20),
+                                        Icon(Icons.check_circle_rounded,
+                                            color: Colors.green[600], size: 20),
                                         const SizedBox(width: 8),
-                                        Text('Đã tìm thấy khách hàng', style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold)),
+                                        Text('Đã tìm thấy khách hàng',
+                                            style: TextStyle(
+                                                color: Colors.green[800],
+                                                fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
-                                    Text('Họ tên: ${_foundUser!['firstName']} ${_foundUser!['lastName']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    Text(
+                                        'Họ tên: ${_foundUser!['firstName']} ${_foundUser!['lastName']}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600)),
                                     const SizedBox(height: 4),
                                     Text('SĐT: ${_foundUser!['phone']}'),
                                     const SizedBox(height: 4),
@@ -383,7 +463,9 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: (_foundUser == null || _isSubmitting) ? null : _submitDepositOrder,
+                          onPressed: (_foundUser == null || _isSubmitting)
+                              ? null
+                              : _submitDepositOrder,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryBlue,
                             foregroundColor: Colors.white,
@@ -394,10 +476,14 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
                             ),
                           ),
                           child: _isSubmitting
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
                               : const Text(
-                                  'Tạo Yêu Cầu Đặt Cọc',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                  'Create Deposit Request',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5),
                                 ),
                         ),
                       ),
@@ -407,3 +493,4 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class ServiceScreen extends StatelessWidget {
   const ServiceScreen({super.key});
@@ -137,37 +137,37 @@ class ServiceScreen extends StatelessWidget {
               children: [
                 _buildServiceCard(
                   title: 'Home Repair',
-                  subtitle: 'Sửa nhà trọn gói',
+                  subtitle: 'Full house renovation',
                   icon: Icons.plumbing_rounded,
                   color: Colors.orange,
                 ),
                 _buildServiceCard(
                   title: 'Furniture',
-                  subtitle: 'Thay nội thất',
+                  subtitle: 'Interior replacement',
                   icon: Icons.chair_rounded,
                   color: Colors.teal,
                 ),
                 _buildServiceCard(
                   title: 'Consulting',
-                  subtitle: 'Tư vấn BĐS',
+                  subtitle: 'Real estate consulting',
                   icon: Icons.support_agent_rounded,
                   color: Colors.indigo,
                 ),
                 _buildServiceCard(
                   title: 'Moving',
-                  subtitle: 'Chuyển nhà',
+                  subtitle: 'Moving service',
                   icon: Icons.local_shipping_rounded,
                   color: Colors.red,
                 ),
                 _buildServiceCard(
                   title: 'Interior Design',
-                  subtitle: 'Thiết kế nội thất',
+                  subtitle: 'Interior design',
                   icon: Icons.format_paint_rounded,
                   color: Colors.purple,
                 ),
                 _buildServiceCard(
                   title: 'Construction',
-                  subtitle: 'Thi công xây dựng',
+                  subtitle: 'Construction service',
                   icon: Icons.architecture_rounded,
                   color: Colors.blueGrey,
                 ),
@@ -242,3 +242,4 @@ class ServiceScreen extends StatelessWidget {
     );
   }
 }
+

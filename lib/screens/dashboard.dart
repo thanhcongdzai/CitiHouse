@@ -25,6 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<Apartment> apartments = [];
   List<Apartment> filteredApartments = [];
+  List<Map<String, dynamic>> _allProjects = [];
   bool isLoading = true;
   String? error;
 
@@ -59,12 +60,109 @@ class _DashboardScreenState extends State<DashboardScreen> {
     fetchApartments();
   }
 
+  bool _isAvailableApartment(Apartment apt) {
+    return apt.houseStatus.trim().toLowerCase() == 'available';
+  }
+
+  String _readString(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value != null) {
+        final text = value.toString().trim();
+        if (text.isNotEmpty) return text;
+      }
+    }
+    return '';
+  }
+
+  int? _readInt(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value is num) return value.toInt();
+      if (value is String) {
+        final parsed = int.tryParse(value.trim());
+        if (parsed != null) return parsed;
+      }
+    }
+    return null;
+  }
+
+  String _normalizeText(String? value) {
+    return (value ?? '').trim().toLowerCase();
+  }
+
+  bool _textEquals(String? a, String? b) {
+    return _normalizeText(a) == _normalizeText(b);
+  }
+
+  String _projectWard(Map<String, dynamic> p) {
+    return _projectLocationPair(p).$1;
+  }
+
+  String _projectCommune(Map<String, dynamic> p) {
+    return _projectLocationPair(p).$2;
+  }
+
+  bool _looksLikeWardLevel(String value) {
+    final text = _normalizeText(value);
+    return text.contains('phường') ||
+        text.contains('xa ') ||
+        text.startsWith('xã') ||
+        text.contains('thị trấn') ||
+        text.contains('thi tran');
+  }
+
+  bool _looksLikeCommuneLevel(String value) {
+    final text = _normalizeText(value);
+    return text.contains('thành phố') ||
+        text.contains('quan ') ||
+        text.startsWith('quận') ||
+        text.contains('huyen') ||
+        text.startsWith('huyện') ||
+        text.contains('thị xã');
+  }
+
+  (String, String) _projectLocationPair(Map<String, dynamic> p) {
+    final rawWard = _readString(p, const ['ward', 'district']);
+    final rawCommune = _readString(p, const ['commune', 'commute']);
+
+    // Handle legacy/incorrect project payload where ward & commune are swapped.
+    final isSwapped = _looksLikeCommuneLevel(rawWard) &&
+        _looksLikeWardLevel(rawCommune);
+    if (isSwapped) {
+      return (rawCommune, rawWard);
+    }
+    return (rawWard, rawCommune);
+  }
+
+  String _projectName(Map<String, dynamic> p) {
+    return _readString(p, const ['project']);
+  }
+
+  String _projectBuilding(Map<String, dynamic> p) {
+    return _readString(p, const ['building']);
+  }
+
+  int? _projectFloor(Map<String, dynamic> p) {
+    return _readInt(p, const ['floor']);
+  }
+
   Future<void> fetchApartments() async {
     try {
-      final response =
-          await http.get(ApiConfig.uri('/api/apartments/'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+      final responses = await Future.wait([
+        http.get(ApiConfig.uri('/api/apartments/')),
+        http.get(ApiConfig.uri('/api/projects/')),
+      ]);
+      final apartmentResponse = responses[0];
+      final projectResponse = responses[1];
+
+      if (apartmentResponse.statusCode == 200) {
+        final List<dynamic> data =
+            json.decode(utf8.decode(apartmentResponse.bodyBytes));
+        final List<dynamic> projectData = projectResponse.statusCode == 200
+            ? json.decode(utf8.decode(projectResponse.bodyBytes))
+            : const [];
+
         setState(() {
           final allApts = data.map((json) => Apartment.fromJson(json)).toList();
           apartments = allApts.where((apt) {
@@ -76,15 +174,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return imgStatus == 'Approved' &&
                 legStatus == 'Approved' &&
                 oiStatus == 'Approved' &&
-                apt.houseStatus == 'Available';
+                _isAvailableApartment(apt);
           }).toList();
+
+          _allProjects = projectData
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+
+          _refreshProjectOptions();
           filteredApartments = List.from(apartments);
-          _extractFilterOptions();
           isLoading = false;
         });
       } else {
         setState(() {
-          error = 'Failed to load apartments: ${response.statusCode}';
+          error = 'Failed to load apartments: ${apartmentResponse.statusCode}';
           isLoading = false;
         });
       }
@@ -97,38 +200,133 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _extractFilterOptions() {
+  List<Map<String, dynamic>> _projectsBySelected({
+    bool includeWard = true,
+    bool includeCommune = true,
+    bool includeProject = true,
+    bool includeBuilding = true,
+  }) {
+    return _allProjects.where((p) {
+      if (includeWard &&
+          _selectedWard != null &&
+          _projectWard(p) != _selectedWard) {
+        return false;
+      }
+      if (includeCommune &&
+          _selectedCommune != null &&
+          _projectCommune(p) != _selectedCommune) {
+        return false;
+      }
+      if (includeProject &&
+          _selectedProject != null &&
+          _projectName(p) != _selectedProject) {
+        return false;
+      }
+      if (includeBuilding &&
+          _selectedBuilding != null &&
+          _projectBuilding(p) != _selectedBuilding) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  void _refreshProjectOptions() {
     _wards.clear();
     _communes.clear();
     _projects.clear();
     _buildings.clear();
     _floors.clear();
 
-    for (var apt in apartments) {
-      if (apt.ward.isNotEmpty) _wards.add(apt.ward);
-      if (apt.commune.isNotEmpty) _communes.add(apt.commune);
-      if (apt.project.isNotEmpty) _projects.add(apt.project);
-      if (apt.building.isNotEmpty) _buildings.add(apt.building);
-      if (apt.floor > 0) _floors.add(apt.floor);
+    final source = _allProjects;
+
+    for (final p in source) {
+      final ward = _projectWard(p);
+      if (ward.isNotEmpty) _wards.add(ward);
+    }
+    for (final p in _projectsBySelected(
+      includeWard: true,
+      includeCommune: false,
+      includeProject: false,
+      includeBuilding: false,
+    )) {
+      final commune = _projectCommune(p);
+      if (commune.isNotEmpty) _communes.add(commune);
+    }
+    for (final p in _projectsBySelected(
+      includeWard: true,
+      includeCommune: true,
+      includeProject: false,
+      includeBuilding: false,
+    )) {
+      final project = _projectName(p);
+      if (project.isNotEmpty) _projects.add(project);
+    }
+    for (final p in _projectsBySelected(
+      includeWard: true,
+      includeCommune: true,
+      includeProject: true,
+      includeBuilding: false,
+    )) {
+      final building = _projectBuilding(p);
+      if (building.isNotEmpty) _buildings.add(building);
+    }
+    for (final p in _projectsBySelected(
+      includeWard: true,
+      includeCommune: true,
+      includeProject: true,
+      includeBuilding: true,
+    )) {
+      final floor = _projectFloor(p);
+      if (floor != null && floor > 0) _floors.add(floor);
+    }
+
+    if (_selectedWard != null && !_wards.contains(_selectedWard)) {
+      _selectedWard = null;
+    }
+    if (_selectedCommune != null && !_communes.contains(_selectedCommune)) {
+      _selectedCommune = null;
+    }
+    if (_selectedProject != null && !_projects.contains(_selectedProject)) {
+      _selectedProject = null;
+    }
+    if (_selectedBuilding != null && !_buildings.contains(_selectedBuilding)) {
+      _selectedBuilding = null;
+    }
+    if (_selectedFloor != null && !_floors.contains(_selectedFloor)) {
+      _selectedFloor = null;
     }
   }
 
   void _applyFilters() {
     setState(() {
       filteredApartments = apartments.where((apt) {
-        bool match = true;
-        if (_minPrice != null && apt.price < _minPrice!) match = false;
-        if (_maxPrice != null && apt.price > _maxPrice!) match = false;
-        if (_selectedWard != null && apt.ward != _selectedWard) match = false;
-        if (_selectedCommune != null && apt.commune != _selectedCommune)
-          match = false;
-        if (_selectedProject != null && apt.project != _selectedProject)
-          match = false;
-        if (_selectedBuilding != null && apt.building != _selectedBuilding)
-          match = false;
-        if (_selectedFloor != null && apt.floor != _selectedFloor)
-          match = false;
-        return match;
+        if (!_isAvailableApartment(apt)) return false;
+
+        // Price filters are optional.
+        if (_minPrice != null && apt.price < _minPrice!) return false;
+        if (_maxPrice != null && apt.price > _maxPrice!) return false;
+
+        // Location/project filters are AND-based:
+        // apartment must match every selected field.
+        if (_selectedWard != null && !_textEquals(apt.ward, _selectedWard)) {
+          return false;
+        }
+        if (_selectedCommune != null &&
+            !_textEquals(apt.commune, _selectedCommune)) {
+          return false;
+        }
+        if (_selectedProject != null &&
+            !_textEquals(apt.project, _selectedProject)) {
+          return false;
+        }
+        if (_selectedBuilding != null &&
+            !_textEquals(apt.building, _selectedBuilding)) {
+          return false;
+        }
+        if (_selectedFloor != null && apt.floor != _selectedFloor) return false;
+
+        return true;
       }).toList();
     });
   }
@@ -193,6 +391,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _selectedProject = null;
                               _selectedBuilding = null;
                               _selectedFloor = null;
+                              _refreshProjectOptions();
                             });
                             _applyFilters();
                           },
@@ -259,8 +458,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       _minPrice = double.tryParse(val);
                                     },
                                     controller: TextEditingController(
-                                        text: _minPrice?.toStringAsFixed(0) ??
-                                            ''),
+                                        text: _minPrice?.toStringAsFixed(0) ?? ''),
                                   ),
                                 ),
                               ),
@@ -329,8 +527,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.map_rounded,
                             value: _selectedWard,
                             items: _wards.toList()..sort(),
-                            onChanged: (val) =>
-                                setModalState(() => _selectedWard = val),
+                            onChanged: (val) => setModalState(() {
+                              _selectedWard = val;
+                              _selectedCommune = null;
+                              _selectedProject = null;
+                              _selectedBuilding = null;
+                              _selectedFloor = null;
+                              _refreshProjectOptions();
+                            }),
                           ),
                         if (_communes.isNotEmpty)
                           _buildDropdownSection(
@@ -338,8 +542,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.location_city_rounded,
                             value: _selectedCommune,
                             items: _communes.toList()..sort(),
-                            onChanged: (val) =>
-                                setModalState(() => _selectedCommune = val),
+                            onChanged: (val) => setModalState(() {
+                              _selectedCommune = val;
+                              _selectedProject = null;
+                              _selectedBuilding = null;
+                              _selectedFloor = null;
+                              _refreshProjectOptions();
+                            }),
                           ),
                         if (_projects.isNotEmpty)
                           _buildDropdownSection(
@@ -347,8 +556,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.business_rounded,
                             value: _selectedProject,
                             items: _projects.toList()..sort(),
-                            onChanged: (val) =>
-                                setModalState(() => _selectedProject = val),
+                            onChanged: (val) => setModalState(() {
+                              _selectedProject = val;
+                              _selectedBuilding = null;
+                              _selectedFloor = null;
+                              _refreshProjectOptions();
+                            }),
                           ),
                         if (_buildings.isNotEmpty)
                           _buildDropdownSection(
@@ -356,8 +569,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             icon: Icons.apartment_rounded,
                             value: _selectedBuilding,
                             items: _buildings.toList()..sort(),
-                            onChanged: (val) =>
-                                setModalState(() => _selectedBuilding = val),
+                            onChanged: (val) => setModalState(() {
+                              _selectedBuilding = val;
+                              _selectedFloor = null;
+                              _refreshProjectOptions();
+                            }),
                           ),
                         if (_floors.isNotEmpty)
                           _buildDropdownSection(
@@ -367,9 +583,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             items: _floors.map((e) => e.toString()).toList()
                               ..sort((a, b) =>
                                   int.parse(a).compareTo(int.parse(b))),
-                            onChanged: (val) => setModalState(() =>
-                                _selectedFloor =
-                                    val == null ? null : int.tryParse(val)),
+                            onChanged: (val) => setModalState(() {
+                              _selectedFloor =
+                                  val == null ? null : int.tryParse(val);
+                              _refreshProjectOptions();
+                            }),
                           ),
                       ],
                     ),
@@ -670,6 +888,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _selectedProject = null;
                           _selectedBuilding = null;
                           _selectedFloor = null;
+                          _refreshProjectOptions();
                         });
                         _applyFilters();
                       },
@@ -1045,3 +1264,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '${price.toString()} VND';
   }
 }
+
+

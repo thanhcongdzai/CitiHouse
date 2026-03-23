@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -96,13 +96,13 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
   String _statusLabel(String? status) {
     switch (status) {
       case 'cho duyet coc':
-        return 'Chờ duyệt cọc';
+        return 'Pending cọc';
       case 'Cho thanh toan':
-        return 'Chờ thanh toán';
+        return 'Pending Payment';
       case 'Da thanh toan':
-        return 'Đã thanh toán';
+        return 'Paid';
       default:
-        return status ?? 'Không rõ';
+        return status ?? 'Unknown';
     }
   }
 
@@ -146,7 +146,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
                       ElevatedButton.icon(
                         onPressed: _fetchOrders,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Thử lại'),
+                        label: const Text('Retry'),
                         style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, foregroundColor: Colors.white),
                       ),
                     ],
@@ -282,7 +282,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
                                         size: 16, color: Colors.grey),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Ngày tạo: ${_formatDate(createdAt)}',
+                                      'Created at: ${_formatDate(createdAt)}',
                                       style: TextStyle(
                                           color: Colors.grey[600], fontSize: 13),
                                     ),
@@ -300,7 +300,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          'Ghi chú: ${order['notes']}',
+                                          'Notes: ${order['notes']}',
                                           style: TextStyle(
                                               color: Colors.grey[600],
                                               fontSize: 13),
@@ -318,3 +318,4 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
     );
   }
 }
+

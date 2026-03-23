@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -26,7 +26,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
 
   bool _isLoading = true;
   String? _error;
-  bool _showApproved = false; // false = 'Đợi duyệt' (cho duyet coc), true = 'Đã duyệt' (cho thanh toan)
+  bool _showApproved = false; // false = 'Pending Approval' (cho duyet coc), true = 'Approved' (cho thanh toan)
 
   List<dynamic> _deposits = [];
   Map<String, String> _staffNames = {};
@@ -118,7 +118,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
         title: Text(
-          _showApproved ? 'Đã duyệt' : 'Đợi duyệt',
+          _showApproved ? 'Approved' : 'Pending Approval',
           style: const TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -168,7 +168,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
                       ElevatedButton.icon(
                         onPressed: _fetchData,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Thử lại'),
+                        label: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -192,7 +192,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            _showApproved ? 'Chưa có đơn cọc nào đã duyệt' : 'Không có đơn cọc nào cần duyệt',
+                            _showApproved ? 'Chưa có đơn cọc nào đã duyệt' : 'None đơn cọc nào cần duyệt',
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
                           ),
                         ],
@@ -271,7 +271,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
                                       const Icon(Icons.support_agent_rounded, size: 16, color: Colors.grey),
                                       const SizedBox(width: 6),
                                       Text(
-                                        'Nhân viên: $staffName',
+                                        'Staff: $staffName',
                                         style: TextStyle(color: Colors.grey[700], fontSize: 14),
                                       ),
                                     ],
@@ -282,7 +282,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
                                       const Icon(Icons.person_outline_rounded, size: 16, color: Colors.grey),
                                       const SizedBox(width: 6),
                                       Text(
-                                        'Khách Hàng: $buyerName',
+                                        'Customer: $buyerName',
                                         style: TextStyle(color: Colors.grey[700], fontSize: 14),
                                       ),
                                     ],
@@ -300,7 +300,7 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
                                         ),
                                       ),
                                       child: Text(
-                                        _showApproved ? 'Đã duyệt' : 'Chờ duyệt',
+                                        _showApproved ? 'Approved' : 'Pending',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
@@ -319,4 +319,5 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
     );
   }
 }
+
 

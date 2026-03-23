@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -28,7 +28,7 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
   List<Apartment> _apartments = [];
   bool _isLoading = true;
   String? _error;
-  bool _showOnlyMyJobs = false; // Toggle between "Công việc hiện có" and "Công việc đã nhận"
+  bool _showOnlyMyJobs = false; // Toggle between "Available Jobs" and "Accepted Jobs"
 
   @override
   void initState() {
@@ -96,7 +96,7 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
         title: Text(
-          _showOnlyMyJobs ? 'Công Việc Của Tôi' : 'Duyệt Bài Đăng (Cần Nhận)',
+          _showOnlyMyJobs ? 'Công Việc Của Tôi' : 'Approve Bài Đăng (Cần Nhận)',
           style: const TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -145,7 +145,7 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
                       ElevatedButton.icon(
                         onPressed: _fetchPendingApartments,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Thử lại'),
+                        label: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -171,7 +171,7 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
                           Text(
                             _showOnlyMyJobs 
                                 ? 'Bạn chưa nhận việc duyệt nào' 
-                                : 'Không có bài đăng nào cần nhận',
+                                : 'None bài đăng nào cần nhận',
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
                           ),
                         ],
@@ -295,7 +295,7 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
                                               ),
                                             ),
                                             child: Text(
-                                              _showOnlyMyJobs ? 'Đã nhận duyệt' : 'Chưa có người nhận',
+                                              _showOnlyMyJobs ? 'Accepted duyệt' : 'Chưa có người nhận',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w700,
@@ -317,3 +317,4 @@ class _ApartmentApprovalStaffScreenState extends State<ApartmentApprovalStaffScr
     );
   }
 }
+

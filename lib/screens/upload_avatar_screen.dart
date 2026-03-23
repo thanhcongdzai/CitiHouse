@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -162,7 +162,7 @@ class _UploadAvatarScreenState extends State<UploadAvatarScreen> {
           Icon(Icons.add_photo_alternate_outlined, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 12),
           Text(
-            'Upload ảnh',
+            'Upload Image',
             style: TextStyle(fontSize: 16, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
           ),
         ],
@@ -170,3 +170,4 @@ class _UploadAvatarScreenState extends State<UploadAvatarScreen> {
     }
   }
 }
+

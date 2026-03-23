@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -500,7 +500,7 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 36),
                 const Text(
-                  'Đăng Ký Thành Công!',
+                  'Registration Successful!',
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
@@ -520,23 +520,26 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF8E1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFF8C034).withOpacity(0.5)),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      Icon(Icons.access_time_rounded, color: Color(0xFFB8860B), size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Thời gian xét duyệt: 1 - 3 ngày làm việc',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFFB8860B),
-                          fontWeight: FontWeight.w600,
+                      const Icon(Icons.access_time_rounded, color: Color(0xFFB8860B), size: 18),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Thời gian xét duyệt: 1 - 3 ngày làm việc',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFB8860B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                          softWrap: true,
                         ),
                       ),
                     ],
@@ -561,7 +564,7 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'Quay về Trang Đăng Nhập',
+                      'Back to Login',
                       style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -574,3 +577,4 @@ class _RegistrationSuccessScreen extends StatelessWidget {
     );
   }
 }
+

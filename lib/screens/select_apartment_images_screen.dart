@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -77,7 +77,7 @@ class _SelectApartmentImagesScreenState
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Chọn hình ảnh',
+          'Select Images',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -90,7 +90,7 @@ class _SelectApartmentImagesScreenState
         padding: const EdgeInsets.all(20),
         children: [
           // === COVER IMAGE SECTION ===
-          _buildSectionHeader('Ảnh bìa', Icons.image_rounded),
+          _buildSectionHeader('Cover Image', Icons.image_rounded),
           const SizedBox(height: 8),
           Text(
             'Chọn 1 ảnh bìa đại diện cho căn hộ',
@@ -139,7 +139,7 @@ class _SelectApartmentImagesScreenState
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
-                              'Ảnh bìa',
+                              'Cover Image',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -195,7 +195,7 @@ class _SelectApartmentImagesScreenState
           const SizedBox(height: 28),
 
           // === SUB IMAGES SECTION ===
-          _buildSectionHeader('Ảnh chi tiết', Icons.photo_library_rounded),
+          _buildSectionHeader('Detail Images', Icons.photo_library_rounded),
           const SizedBox(height: 8),
           Text(
             'Chọn nhiều ảnh mô tả chi tiết căn hộ',
@@ -227,7 +227,7 @@ class _SelectApartmentImagesScreenState
                       color: primaryBlue, size: 32),
                   const SizedBox(width: 12),
                   Text(
-                    'Thêm ảnh chi tiết',
+                    'Add detail images',
                     style: TextStyle(
                       fontSize: 16,
                       color: primaryBlue,
@@ -321,7 +321,7 @@ class _SelectApartmentImagesScreenState
                 icon: const Icon(Icons.check_circle_rounded,
                     color: Colors.white, size: 22),
                 label: const Text(
-                  'Xác nhận',
+                  'Confirm',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 17,
@@ -373,3 +373,4 @@ class _SelectApartmentImagesScreenState
     );
   }
 }
+

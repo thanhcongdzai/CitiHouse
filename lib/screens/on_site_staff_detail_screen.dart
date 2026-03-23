@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -99,22 +99,22 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     if (newStatus == _appt['status']) return; // No change
 
     final statusLabels = {
-      'Dang lien he': 'Đang liên hệ',
-      'Da xac nhan lich': 'Đã xác nhận lịch',
-      'Dang xem': 'Đang xem',
-      'Hoan thanh': 'Hoàn thành',
+      'Dang lien he': 'Contacting',
+      'Da xac nhan lich': 'Schedule confirmed',
+      'Dang xem': 'Viewing',
+      'Hoan thanh': 'Completed',
     };
     final label = statusLabels[newStatus] ?? newStatus;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận cập nhật'),
+        title: const Text('Confirm cập nhật'),
         content: Text('Bạn có chắc chắn muốn chuyển trạng thái thành "$label"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -126,7 +126,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, foregroundColor: Colors.white),
-            child: const Text('Xác nhận'),
+            child: const Text('Confirm'),
           ),
         ],
       ),
@@ -137,12 +137,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận hoàn thành', style: TextStyle(color: Colors.red)),
-        content: const Text('Khi đã close deal sẽ không thể hoàn tác. Xác nhận?'),
+        title: const Text('Confirm hoàn thành', style: TextStyle(color: Colors.red)),
+        content: const Text('Khi đã close deal sẽ không thể hoàn tác. Confirm?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -182,7 +182,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('✅ Đã nhận việc thành công!'),
+              content: const Text('Nhận việc thành công'),
               backgroundColor: Colors.green[600],
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -259,15 +259,15 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
   String _statusLabel(String? status) {
     switch (status) {
       case 'Yeu cau xem':
-        return 'Yêu cầu xem';
+        return 'Viewing Request';
       case 'Da xac nhan':
         return 'Đã xác nhận';
       case 'Hoan thanh':
-        return 'Hoàn thành';
+        return 'Completed';
       case 'Huy':
         return 'Đã hủy';
       default:
-        return status ?? 'Không rõ';
+        return status ?? 'Unknown';
     }
   }
 
@@ -301,7 +301,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
 
     final userName = user != null
         ? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim()
-        : _appt['userId']?.toString() ?? 'Không rõ';
+        : _appt['userId']?.toString() ?? 'Unknown';
     final userPhone2 = user?['phone']?.toString() ?? '';
 
     final customerName = customer?['name']?.toString() ?? '';
@@ -424,7 +424,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         const SizedBox(height: 16),
 
                         // ── APARTMENT INFO ──────────────────────────────
-                        _SectionHeader(icon: Icons.apartment_rounded, label: 'Thông tin căn hộ'),
+                        _SectionHeader(icon: Icons.apartment_rounded, label: 'Apartment Information'),
                         const SizedBox(height: 10),
                         _InfoRow(Icons.home_work_rounded, aptTitle),
                         if (aptProject.isNotEmpty || aptBuilding.isNotEmpty)
@@ -437,16 +437,16 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                           _InfoRow(Icons.attach_money_rounded,
                               'Giá: ${_formatPrice(aptPrice)}'),
                         if (aptStatus.isNotEmpty)
-                          _InfoRow(Icons.info_outline_rounded, 'Trạng thái: $aptStatus'),
+                          _InfoRow(Icons.info_outline_rounded, 'Status: $aptStatus'),
 
                         const SizedBox(height: 16),
                         const Divider(height: 1),
                         const SizedBox(height: 16),
 
                         // ── USER / BOOKER INFO ──────────────────────────
-                        _SectionHeader(icon: Icons.person_rounded, label: 'Người đặt lịch'),
+                        _SectionHeader(icon: Icons.person_rounded, label: 'Booker'),
                         const SizedBox(height: 10),
-                        _InfoRow(Icons.badge_rounded, userName.isNotEmpty ? userName : 'Không rõ'),
+                        _InfoRow(Icons.badge_rounded, userName.isNotEmpty ? userName : 'Unknown'),
                         if (userPhone2.isNotEmpty)
                           _InfoRow(Icons.phone_rounded, userPhone2),
 
@@ -538,7 +538,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                   Icon(Icons.check_circle_rounded, color: Colors.green[600], size: 22),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Công việc đã hoàn thành',
+                                    'Completed Jobs',
                                     style: TextStyle(
                                       color: Colors.green[700],
                                       fontWeight: FontWeight.w700,
@@ -574,7 +574,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                 },
                                 icon: const Icon(Icons.request_quote_rounded, size: 22),
                                 label: const Text(
-                                  'Yêu cầu đặt cọc',
+                                  'Deposit Request',
                                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: 0.5),
                                 ),
                                 style: ElevatedButton.styleFrom(
@@ -610,7 +610,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                               child: Row(
                                 children: [
                                   const Text(
-                                    'Trạng thái:',
+                                    'Status:',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
@@ -641,11 +641,11 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                                 color: primaryBlue,
                                               ),
                                               items: const [
-                                                DropdownMenuItem(value: 'Yeu cau xem', child: Text('Yêu cầu xem')),
-                                                DropdownMenuItem(value: 'Dang lien he', child: Text('Đang liên hệ')),
-                                                DropdownMenuItem(value: 'Da xac nhan lich', child: Text('Đã xác nhận lịch')),
-                                                DropdownMenuItem(value: 'Dang xem', child: Text('Đang xem')),
-                                                DropdownMenuItem(value: 'Hoan thanh', child: Text('Hoàn thành', style: TextStyle(color: Colors.green))),
+                                                DropdownMenuItem(value: 'Yeu cau xem', child: Text('Viewing Request')),
+                                                DropdownMenuItem(value: 'Dang lien he', child: Text('Contacting')),
+                                                DropdownMenuItem(value: 'Da xac nhan lich', child: Text('Schedule confirmed')),
+                                                DropdownMenuItem(value: 'Dang xem', child: Text('Viewing')),
+                                                DropdownMenuItem(value: 'Hoan thanh', child: Text('Completed', style: TextStyle(color: Colors.green))),
                                               ],
                                               onChanged: (val) {
                                                 if (val != null) _showStatusConfirmation(val);
@@ -761,3 +761,4 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
+

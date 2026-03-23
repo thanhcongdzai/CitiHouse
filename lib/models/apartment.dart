@@ -7,6 +7,7 @@ class Apartment {
   final String ward;
   final String commune;
   final String project;
+  final String? projectId;
   final String building;
   final int floor;
   final String apartmentNumber;
@@ -24,6 +25,7 @@ class Apartment {
     required this.ward,
     required this.commune,
     required this.project,
+    this.projectId,
     required this.building,
     required this.floor,
     required this.apartmentNumber,
@@ -45,6 +47,20 @@ class Apartment {
     return value.toString().trim();
   }
 
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim()) ?? 0;
+    if (value is Map) {
+      final numberLong = value['\$numberLong']?.toString();
+      if (numberLong != null) return int.tryParse(numberLong) ?? 0;
+      final numberInt = value['\$numberInt']?.toString();
+      if (numberInt != null) return int.tryParse(numberInt) ?? 0;
+    }
+    return int.tryParse(value.toString().trim()) ?? 0;
+  }
+
   factory Apartment.fromJson(Map<String, dynamic> json) {
     final String resolvedImageUrl = _parseImageUrl(
       json['userImageUrl'] ?? json['imageUrl'],
@@ -55,12 +71,13 @@ class Apartment {
       title: json['title'] as String? ?? 'No Title',
       subject: json['subject'] as String? ?? 'No Subject',
       description: json['description'] as String? ?? '',
-      price: json['price'] is Map ? int.tryParse(json['price']['\$numberLong']?.toString() ?? '0') ?? 0 : (json['price'] as num?)?.toInt() ?? 0,
-      ward: json['location']?['ward'] as String? ?? '',
-      commune: json['location']?['commune'] as String? ?? '',
-      project: json['projectInfo']?['project'] as String? ?? '',
-      building: json['projectInfo']?['building'] as String? ?? '',
-      floor: json['projectInfo']?['floor'] as int? ?? 0,
+      price: _parseInt(json['price']),
+      ward: (json['location']?['ward'] as String? ?? '').trim(),
+      commune: (json['location']?['commune'] as String? ?? '').trim(),
+      project: (json['projectInfo']?['project'] as String? ?? '').trim(),
+      projectId: json['projectInfo']?['projectId']?.toString() ?? '',
+      building: (json['projectInfo']?['building'] as String? ?? '').trim(),
+      floor: _parseInt(json['projectInfo']?['floor']),
       apartmentNumber: json['projectInfo']?['apartmentNumber'] as String? ?? '',
       displayCode: json['displayCode'] as String? ?? '',
       imageUrl: resolvedImageUrl,

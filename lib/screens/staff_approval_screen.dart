@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -34,7 +34,10 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
   }
 
   Future<void> _fetchPendingUsers() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final response = await http.get(ApiConfig.uri('/api/users/'));
       if (response.statusCode == 200) {
@@ -47,10 +50,16 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
           _isLoading = false;
         });
       } else {
-        setState(() { _error = 'Server error: ${response.statusCode}'; _isLoading = false; });
+        setState(() {
+          _error = 'Server error: ${response.statusCode}';
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      setState(() { _error = 'Connection error: $e'; _isLoading = false; });
+      setState(() {
+        _error = 'Connection error: $e';
+        _isLoading = false;
+      });
     }
   }
 
@@ -72,10 +81,12 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Đã duyệt tài khoản ${user['firstName']} ${user['lastName']}'),
+              content: Text(
+                  '✅ Approved tài khoản ${user['firstName']} ${user['lastName']}'),
               backgroundColor: Colors.green[600],
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           );
           _fetchPendingUsers();
@@ -83,14 +94,18 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi: ${response.statusCode}'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text('Lỗi: ${response.statusCode}'),
+                backgroundColor: Colors.red),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connection error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Connection error: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -106,7 +121,8 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Xác nhận từ chối', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Confirm từ chối',
+            style: TextStyle(fontWeight: FontWeight.w800)),
         content: Text(
           'Bạn có chắc muốn từ chối và xóa tài khoản của "$name" không?\n\nHành động này không thể hoàn tác!',
           style: const TextStyle(height: 1.5),
@@ -114,14 +130,15 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Từ Chối & Xóa'),
           ),
@@ -140,10 +157,11 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('🗑️ Đã từ chối và xóa tài khoản "$name"'),
+              content: Text('🗑️ Rejected và xóa tài khoản "$name"'),
               backgroundColor: Colors.red[600],
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           );
           _fetchPendingUsers();
@@ -151,14 +169,18 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi xóa: ${response.statusCode}'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text('Lỗi xóa: ${response.statusCode}'),
+                backgroundColor: Colors.red),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connection error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Connection error: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -170,7 +192,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
         title: const Text(
-          'Duyệt Tài Khoản',
+          'Approve Tài Khoản',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -184,7 +206,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _fetchPendingUsers,
-            tooltip: 'Làm mới',
+            tooltip: 'Refresh',
           ),
           const SizedBox(width: 8),
         ],
@@ -200,15 +222,20 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline_rounded, size: 64, color: Colors.red[300]),
+                      Icon(Icons.error_outline_rounded,
+                          size: 64, color: Colors.red[300]),
                       const SizedBox(height: 16),
-                      Text(_error!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
+                      Text(_error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 15)),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _fetchPendingUsers,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Thử lại'),
-                        style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, foregroundColor: Colors.white),
+                        label: const Text('Retry'),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryBlue,
+                            foregroundColor: Colors.white),
                       ),
                     ],
                   ),
@@ -224,15 +251,20 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                               color: Colors.green.shade50,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.check_circle_outline_rounded, size: 72, color: Colors.green[400]),
+                            child: Icon(Icons.check_circle_outline_rounded,
+                                size: 72, color: Colors.green[400]),
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'Không có tài khoản chờ duyệt',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
+                            'None tài khoản chờ duyệt',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87),
                           ),
                           const SizedBox(height: 8),
-                          Text('Tất cả tài khoản đã được xét duyệt!', style: TextStyle(color: Colors.grey[600])),
+                          Text('All accounts have been reviewed!',
+                              style: TextStyle(color: Colors.grey[600])),
                         ],
                       ),
                     )
@@ -244,7 +276,9 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                         itemCount: _pendingUsers.length,
                         itemBuilder: (context, index) {
                           final user = _pendingUsers[index];
-                          final name = '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim();
+                          final name =
+                              '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'
+                                  .trim();
                           final phone = user['phone'] ?? '';
                           final email = user['email'] ?? '';
                           final gender = user['gender'] ?? '';
@@ -273,9 +307,12 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                                     children: [
                                       CircleAvatar(
                                         radius: 28,
-                                        backgroundColor: primaryBlue.withOpacity(0.1),
+                                        backgroundColor:
+                                            primaryBlue.withOpacity(0.1),
                                         child: Text(
-                                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                          name.isNotEmpty
+                                              ? name[0].toUpperCase()
+                                              : '?',
                                           style: const TextStyle(
                                             color: primaryBlue,
                                             fontSize: 22,
@@ -286,10 +323,11 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              name.isEmpty ? 'Chưa có tên' : name,
+                                              name.isEmpty ? 'No name' : name,
                                               style: const TextStyle(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.w800,
@@ -298,14 +336,21 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                                             ),
                                             const SizedBox(height: 4),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 3),
                                               decoration: BoxDecoration(
-                                                color: accentYellow.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(20),
-                                                border: Border.all(color: accentYellow.withOpacity(0.5)),
+                                                color: accentYellow
+                                                    .withOpacity(0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                border: Border.all(
+                                                    color: accentYellow
+                                                        .withOpacity(0.5)),
                                               ),
                                               child: const Text(
-                                                '⏳ Chờ duyệt',
+                                                '⏳ Pending',
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w700,
@@ -321,15 +366,18 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                                   const SizedBox(height: 16),
                                   const Divider(height: 1),
                                   const SizedBox(height: 14),
-                                   _buildInfoRow(Icons.phone_rounded, phone),
+                                  _buildInfoRow(Icons.phone_rounded, phone),
                                   const SizedBox(height: 8),
                                   _buildInfoRow(Icons.email_outlined, email),
                                   const SizedBox(height: 8),
-                                  _buildInfoRow(Icons.badge_outlined, 'CMND/CCCD: $cccd'),
+                                  _buildInfoRow(
+                                      Icons.badge_outlined, 'CMND/CCCD: $cccd'),
                                   const SizedBox(height: 8),
-                                  _buildInfoRow(Icons.calendar_today_rounded, 'Ngày sinh: $dob'),
+                                  _buildInfoRow(Icons.calendar_today_rounded,
+                                      'Ngày sinh: $dob'),
                                   const SizedBox(height: 8),
-                                  _buildInfoRow(Icons.person_outline_rounded, 'Giới tính: $gender'),
+                                  _buildInfoRow(Icons.person_outline_rounded,
+                                      'Giới tính: $gender'),
                                   const SizedBox(height: 20),
                                   Row(
                                     children: [
@@ -338,17 +386,24 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                                           height: 50,
                                           child: ElevatedButton.icon(
                                             onPressed: () => _approveUser(user),
-                                            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                                            icon: const Icon(
+                                                Icons
+                                                    .check_circle_outline_rounded,
+                                                size: 18),
                                             label: const Text(
-                                              'Phê Duyệt',
-                                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                                              'Phê duyệt',
+                                              style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700),
                                             ),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF2ECC71),
+                                              backgroundColor:
+                                                  const Color(0xFF2ECC71),
                                               foregroundColor: Colors.white,
                                               elevation: 0,
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(14),
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
                                               ),
                                             ),
                                           ),
@@ -360,17 +415,22 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                                           height: 50,
                                           child: ElevatedButton.icon(
                                             onPressed: () => _rejectUser(user),
-                                            icon: const Icon(Icons.cancel_outlined, size: 18),
+                                            icon: const Icon(
+                                                Icons.cancel_outlined,
+                                                size: 18),
                                             label: const Text(
                                               'Từ Chối',
-                                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                                              style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700),
                                             ),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.red[400],
                                               foregroundColor: Colors.white,
                                               elevation: 0,
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(14),
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
                                               ),
                                             ),
                                           ),
@@ -396,7 +456,10 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         Expanded(
           child: Text(
             text,
-            style: TextStyle(color: Colors.grey[700], fontSize: 14, fontWeight: FontWeight.w500),
+            style: TextStyle(
+                color: Colors.grey[700],
+                fontSize: 14,
+                fontWeight: FontWeight.w500),
             overflow: TextOverflow.ellipsis,
           ),
         ),

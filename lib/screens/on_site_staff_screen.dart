@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -28,7 +28,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
   List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
   String? _error;
-  int _selectedTab = 0; // 0 = Hiện có, 1 = Đã nhận, 2 = Hoàn thành, 3 = Đã yêu cầu cọc
+  int _selectedTab =
+      0; // 0 = Hiện có, 1 = Accepted, 2 = Completed, 3 = Deposit Requested
 
   @override
   void initState() {
@@ -49,7 +50,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
 
       if (response.statusCode == 200) {
         final List<dynamic> raw = json.decode(utf8.decode(response.bodyBytes));
-        final List<Map<String, dynamic>> appointments = raw.cast<Map<String, dynamic>>();
+        final List<Map<String, dynamic>> appointments =
+            raw.cast<Map<String, dynamic>>();
 
         // Fetch apartment and user info concurrently for each appointment
         final enriched = await Future.wait(appointments.map((appt) async {
@@ -132,20 +134,20 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
   String _statusLabel(String? status) {
     switch (status) {
       case 'Yeu cau xem':
-        return 'Yêu cầu xem';
+        return 'Viewing Request';
       case 'Dang lien he':
-        return 'Đang liên hệ';
+        return 'Contacting';
       case 'Da xac nhan':
       case 'Da xac nhan lich':
-        return 'Đã xác nhận lịch';
+        return 'Schedule confirmed';
       case 'Dang xem':
-        return 'Đang xem';
+        return 'Viewing';
       case 'Hoan thanh':
-        return 'Hoàn thành';
+        return 'Completed';
       case 'Huy':
         return 'Đã hủy';
       default:
-        return status ?? 'Không rõ';
+        return status ?? 'Unknown';
     }
   }
 
@@ -155,12 +157,12 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
     final displayedAppointments = _appointments.where((appt) {
       final staffInCharge = appt['staffInCharge']?.toString();
       final status = appt['status']?.toString();
-      
+
       if (_selectedTab == 0) {
         // Hiện có: staffInCharge is null or empty
         return staffInCharge == null || staffInCharge.isEmpty;
       } else if (_selectedTab == 1) {
-        // Đã nhận: Assigned to me, NOT Hoan thanh or Da yeu cau coc
+        // Accepted: Assigned to me, NOT Hoan thanh or Da yeu cau coc
         return staffInCharge == widget.currentUser.id &&
             status != 'Hoan thanh' &&
             status != 'Da yeu cau coc';
@@ -168,8 +170,9 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         // Đã hoàn thành: Assigned to me AND status is Hoan thanh only
         return staffInCharge == widget.currentUser.id && status == 'Hoan thanh';
       } else if (_selectedTab == 3) {
-        // Đã yêu cầu cọc: Assigned to me AND Da yeu cau coc
-        return staffInCharge == widget.currentUser.id && status == 'Da yeu cau coc';
+        // Deposit Requested: Assigned to me AND Da yeu cau coc
+        return staffInCharge == widget.currentUser.id &&
+            status == 'Da yeu cau coc';
       }
       return false;
     }).toList();
@@ -181,9 +184,13 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: primaryBlue),
         title: Text(
-          _selectedTab == 0 ? 'Lịch Hẹn Xem Nhà' : 
-          _selectedTab == 1 ? 'Công Việc Của Tôi' : 
-          _selectedTab == 2 ? 'Đã Hoàn Thành' : 'Đã Yêu Cầu Cọc',
+          _selectedTab == 0
+              ? 'Viewing Requests Detail'
+              : _selectedTab == 1
+                  ? 'My Jobs'
+                  : _selectedTab == 2
+                      ? 'Đã Hoàn Thành'
+                      : 'Đã Yêu Cầu Cọc',
           style: const TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -194,7 +201,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: primaryBlue),
             onPressed: _fetchAppointments,
-            tooltip: 'Làm mới',
+            tooltip: 'Refresh',
           ),
           const SizedBox(width: 8),
         ],
@@ -206,19 +213,27 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         isCompletedJobsSelected: _selectedTab == 2,
         isDepositRequestedSelected: _selectedTab == 3,
         onAllJobsTapped: () {
-          setState(() { _selectedTab = 0; });
+          setState(() {
+            _selectedTab = 0;
+          });
           Navigator.pop(context);
         },
         onMyJobsTapped: () {
-          setState(() { _selectedTab = 1; });
+          setState(() {
+            _selectedTab = 1;
+          });
           Navigator.pop(context);
         },
         onCompletedJobsTapped: () {
-          setState(() { _selectedTab = 2; });
+          setState(() {
+            _selectedTab = 2;
+          });
           Navigator.pop(context);
         },
         onDepositRequestedTapped: () {
-          setState(() { _selectedTab = 3; });
+          setState(() {
+            _selectedTab = 3;
+          });
           Navigator.pop(context);
         },
       ),
@@ -258,7 +273,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
           ElevatedButton.icon(
             onPressed: _fetchAppointments,
             icon: const Icon(Icons.refresh),
-            label: const Text('Thử lại'),
+            label: const Text('Retry'),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryBlue,
               foregroundColor: Colors.white,
@@ -280,15 +295,20 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
               color: primaryBlue.withOpacity(0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.event_available_rounded, size: 72, color: primaryBlue.withOpacity(0.6)),
+            child: Icon(Icons.event_available_rounded,
+                size: 72, color: primaryBlue.withOpacity(0.6)),
           ),
           const SizedBox(height: 20),
           const Text(
-            'Không có lịch hẹn nào',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
+            'Không lịch hẹn nào',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87),
           ),
           const SizedBox(height: 8),
-          Text('Hiện chưa có lịch hẹn xem nhà.', style: TextStyle(color: Colors.grey[600])),
+          Text('Không có yêu cầu xem nhà nào.',
+              style: TextStyle(color: Colors.grey[600])),
         ],
       ),
     );
@@ -311,12 +331,14 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
 
     final userName = user != null
         ? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim()
-        : appt['userId']?.toString() ?? 'Không rõ';
+        : appt['userId']?.toString() ?? 'Unknown';
 
     final customerName = customer?['name']?.toString() ?? '';
-    final aptTitle = apartment?['title']?.toString() ?? 'Căn hộ #${appt['apartmentId']}';
+    final aptTitle =
+        apartment?['title']?.toString() ?? 'Căn hộ #${appt['apartmentId']}';
 
-    final hasStaff = staffInCharge != null && staffInCharge.toString().isNotEmpty;
+    final hasStaff =
+        staffInCharge != null && staffInCharge.toString().isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -330,7 +352,10 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                 end: Alignment.bottomRight,
               )
             : LinearGradient(
-                colors: [primaryBlue.withOpacity(0.4), accentYellow.withOpacity(0.6)],
+                colors: [
+                  primaryBlue.withOpacity(0.4),
+                  accentYellow.withOpacity(0.6)
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -398,7 +423,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.apartment_rounded, color: Colors.white, size: 24),
+                        child: const Icon(Icons.apartment_rounded,
+                            color: Colors.white, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -418,14 +444,20 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
-                            Row(
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: _statusColor(status).withOpacity(0.12),
+                                    color:
+                                        _statusColor(status).withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: _statusColor(status).withOpacity(0.4)),
+                                    border: Border.all(
+                                        color: _statusColor(status)
+                                            .withOpacity(0.4)),
                                   ),
                                   child: Text(
                                     _statusLabel(status),
@@ -439,19 +471,26 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                                 if (isMine) ...[
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: Colors.green.shade50,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.green.shade300),
+                                      border: Border.all(
+                                          color: Colors.green.shade300),
                                     ),
                                     child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.check_circle_rounded, size: 12, color: Colors.green),
+                                        Icon(Icons.check_circle_rounded,
+                                            size: 12, color: Colors.green),
                                         SizedBox(width: 4),
                                         Text(
-                                          'Phụ trách',
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green),
+                                          'In Charge',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green),
                                         ),
                                       ],
                                     ),
@@ -459,19 +498,26 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                                 ] else if (hasStaff) ...[
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: Colors.grey.shade100,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
                                     ),
                                     child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.lock_rounded, size: 12, color: Colors.grey),
+                                        Icon(Icons.lock_rounded,
+                                            size: 12, color: Colors.grey),
                                         SizedBox(width: 4),
                                         Text(
-                                          'Đã nhận',
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                                          'Accepted',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey),
                                         ),
                                       ],
                                     ),
@@ -483,7 +529,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.black26, size: 18),
+                      const Icon(Icons.arrow_forward_ios_rounded,
+                          color: Colors.black26, size: 18),
                     ],
                   ),
 
@@ -512,7 +559,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: accentYellow.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(8),
@@ -520,10 +568,11 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.person_rounded, size: 14, color: Colors.orange.shade700),
+                                  Icon(Icons.person_rounded,
+                                      size: 14, color: Colors.orange.shade700),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Người đặt lịch',
+                                    'Booker',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -537,7 +586,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                             Padding(
                               padding: const EdgeInsets.only(left: 4),
                               child: Text(
-                                userName.isNotEmpty ? userName : 'Không rõ',
+                                userName.isNotEmpty ? userName : 'Unknown',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
@@ -550,7 +599,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                           ],
                         ),
                       ),
-                      
+
                       // Referred Column
                       if (isReferred) ...[
                         Container(
@@ -564,7 +613,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.purple.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -572,10 +622,12 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.handshake_rounded, size: 14, color: Colors.purple.shade600),
+                                    Icon(Icons.handshake_rounded,
+                                        size: 14,
+                                        color: Colors.purple.shade600),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Khách môi giới',
+                                      'Brokered Client',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,

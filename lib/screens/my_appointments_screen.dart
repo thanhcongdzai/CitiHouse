@@ -177,9 +177,6 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                   status,
                   style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 14),
                 ),
-                const Spacer(),
-                if (appt['id'] != null)
-                  Text('#${appt['id']}', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
               ],
             ),
           ),

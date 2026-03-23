@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -56,6 +56,7 @@ class _ApartmentApprovalDetailScreenState
         'commune': _currentApt.commune,
       },
       'projectInfo': {
+        'projectId': _currentApt.projectId ?? '',
         'project': _currentApt.project,
         'building': _currentApt.building,
         'floor': _currentApt.floor,
@@ -145,7 +146,7 @@ class _ApartmentApprovalDetailScreenState
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
-          'Xác nhận cho đăng',
+          'Confirm cho đăng',
           style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
         ),
         content: const Text('Bạn có chắc chắn muốn duyệt không?'),
@@ -153,7 +154,7 @@ class _ApartmentApprovalDetailScreenState
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
-              'Hủy',
+              'Cancel',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -234,7 +235,7 @@ class _ApartmentApprovalDetailScreenState
                     Navigator.pop(ctx);
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Đóng'),
+                  child: const Text('Close'),
                 ),
               ],
             ),
@@ -272,7 +273,7 @@ class _ApartmentApprovalDetailScreenState
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
-          'Xác nhận duyệt',
+          'Confirm duyệt',
           style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
         ),
         content: Text(
@@ -305,7 +306,7 @@ class _ApartmentApprovalDetailScreenState
       await _updateStepStatus(
         stepKey,
         'Approved',
-        successMessage: 'Đã duyệt $title!',
+        successMessage: 'Approved $title!',
       );
     }
   }
@@ -327,7 +328,7 @@ class _ApartmentApprovalDetailScreenState
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
-              'Hủy',
+              'Cancel',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -340,7 +341,7 @@ class _ApartmentApprovalDetailScreenState
               ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Từ chối'),
+            child: const Text('Reject'),
           ),
         ],
       ),
@@ -350,7 +351,7 @@ class _ApartmentApprovalDetailScreenState
       await _updateStepStatus(
         stepKey,
         'Rejected',
-        successMessage: 'Đã từ chối $title!',
+        successMessage: 'Rejected $title!',
       );
     }
   }
@@ -423,7 +424,7 @@ class _ApartmentApprovalDetailScreenState
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
-          'Xác nhận từ chối yêu cầu',
+          'Confirm từ chối yêu cầu',
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
         content: const Text(
@@ -433,7 +434,7 @@ class _ApartmentApprovalDetailScreenState
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
-              'Hủy',
+              'Cancel',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -446,7 +447,7 @@ class _ApartmentApprovalDetailScreenState
               ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Từ chối yêu cầu'),
+            child: const Text('Reject yêu cầu'),
           ),
         ],
       ),
@@ -475,11 +476,43 @@ class _ApartmentApprovalDetailScreenState
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           response.statusCode == 204) {
+        final projectId = (_currentApt.projectId ?? '').trim();
+        if (projectId.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Da tu choi yeu cau nhung khong tim thay projectId de clear occupiedBy.',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+
+        try {
+          await _clearProjectOccupiedBy(projectId);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Da tu choi yeu cau nhung clear occupiedBy that bai: $e',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+
         if (mounted) {
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (ctx) => AlertDialog(
+              scrollable: true,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -487,11 +520,15 @@ class _ApartmentApprovalDetailScreenState
                 children: [
                   Icon(Icons.cancel_rounded, color: Colors.red, size: 28),
                   SizedBox(width: 12),
-                  Text(
-                    'Từ chối thành công',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Reject thành công',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -513,7 +550,7 @@ class _ApartmentApprovalDetailScreenState
                     Navigator.pop(ctx);
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Đóng'),
+                  child: const Text('Close'),
                 ),
               ],
             ),
@@ -545,6 +582,46 @@ class _ApartmentApprovalDetailScreenState
     }
   }
 
+  Future<void> _clearProjectOccupiedBy(String projectId) async {
+    final headers = {'Content-Type': 'application/json'};
+    final body = json.encode({'occupiedBy': ''});
+
+    final withSlash = '/api/projects/$projectId/';
+    final withoutSlash = '/api/projects/$projectId';
+
+    final patchWithSlash = await http.patch(
+      ApiConfig.uri(withSlash),
+      headers: headers,
+      body: body,
+    );
+    if (patchWithSlash.statusCode >= 200 && patchWithSlash.statusCode < 300) {
+      return;
+    }
+
+    final patchWithoutSlash = await http.patch(
+      ApiConfig.uri(withoutSlash),
+      headers: headers,
+      body: body,
+    );
+    if (patchWithoutSlash.statusCode >= 200 &&
+        patchWithoutSlash.statusCode < 300) {
+      return;
+    }
+
+    final putWithSlash = await http.put(
+      ApiConfig.uri(withSlash),
+      headers: headers,
+      body: body,
+    );
+    if (putWithSlash.statusCode >= 200 && putWithSlash.statusCode < 300) {
+      return;
+    }
+
+    throw Exception(
+      'PATCH ${patchWithSlash.statusCode}/${patchWithoutSlash.statusCode}, PUT ${putWithSlash.statusCode}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final v = _currentApt.verifications ?? {};
@@ -561,7 +638,7 @@ class _ApartmentApprovalDetailScreenState
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
         title: const Text(
-          'Chi Tiết Phê Duyệt',
+          'Chi Tiết Phê Approve',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -646,7 +723,7 @@ class _ApartmentApprovalDetailScreenState
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Tiến Trình Phê Duyệt',
+                  'Tiến Trình Phê Approve',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -722,7 +799,7 @@ class _ApartmentApprovalDetailScreenState
                   color: Colors.red,
                   shadowColor: Colors.red.withOpacity(0.35),
                   icon: Icons.cancel_rounded,
-                  label: 'Từ chối yêu cầu',
+                  label: 'Reject yêu cầu',
                   onPressed: _showConfirmRejectRequestDialog,
                 )
               : approvedAll
@@ -730,7 +807,7 @@ class _ApartmentApprovalDetailScreenState
                       color: Colors.green[600]!,
                       shadowColor: Colors.green.withOpacity(0.5),
                       icon: Icons.check_circle_rounded,
-                      label: 'Duyệt và Cho Đăng',
+                      label: 'Approve và Cho Đăng',
                       onPressed: _showConfirmPublishDialog,
                     )
                   : null,
@@ -815,9 +892,9 @@ class _ApartmentApprovalDetailScreenState
             : primaryBlue;
     final String timeSuffix = _formatUpdatedAt(statusMap['updatedAt']);
     final String statusText = isApproved
-        ? 'Đã duyệt$timeSuffix'
+        ? 'Approved$timeSuffix'
         : isRejected
-            ? 'Đã từ chối$timeSuffix'
+            ? 'Rejected$timeSuffix'
             : 'Chưa được duyệt';
     final Color statusColor = isApproved
         ? Colors.green[600]!
@@ -900,7 +977,7 @@ class _ApartmentApprovalDetailScreenState
                                 ),
                               ),
                               child: const Text(
-                                'Từ chối',
+                                'Reject',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -920,7 +997,7 @@ class _ApartmentApprovalDetailScreenState
                                 ),
                               ),
                               child: const Text(
-                                'Duyệt',
+                                'Approve',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -932,3 +1009,4 @@ class _ApartmentApprovalDetailScreenState
     );
   }
 }
+
