@@ -48,7 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'isActive': false,
       'role': 'temporaryUser',
       'createdAt': DateTime.now().toIso8601String(),
-      'status': 'pending',
+      'status': 'Pending',
     };
 
     try {

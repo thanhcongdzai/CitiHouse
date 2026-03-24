@@ -71,13 +71,13 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     super.dispose();
   }
 
-  bool _isProjectUnoccupied(Map<String, dynamic> project) {
+  bool _hasOccupiedBy(Map<String, dynamic> project) {
     final occupiedBy = project['occupiedBy'];
-    if (occupiedBy == null) return true;
-    if (occupiedBy is String) return occupiedBy.trim().isEmpty;
-    if (occupiedBy is List) return occupiedBy.isEmpty;
-    if (occupiedBy is Map) return occupiedBy.isEmpty;
-    return false;
+    if (occupiedBy == null) return false;
+    if (occupiedBy is String) return occupiedBy.trim().isNotEmpty;
+    if (occupiedBy is List) return occupiedBy.isNotEmpty;
+    if (occupiedBy is Map) return occupiedBy.isNotEmpty;
+    return true;
   }
 
   Future<void> _fetchProjects() async {
@@ -86,14 +86,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       if (resp.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(resp.bodyBytes));
         setState(() {
-          final projects =
-              data.map((e) => Map<String, dynamic>.from(e)).toList();
-          final availableProjects =
-              projects.where(_isProjectUnoccupied).toList();
-
-          // Fallback: if backend format differs, still allow selecting projects.
-          _allProjects =
-              availableProjects.isNotEmpty ? availableProjects : projects;
+          _allProjects = data.map((e) => Map<String, dynamic>.from(e)).toList();
           final names = <String>{};
           for (var p in _allProjects) {
             if (p['project'] != null && p['project'].toString().isNotEmpty) {
@@ -213,6 +206,17 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         orElse: () => {},
       );
     });
+
+    if (_selectedUnit != null &&
+        _selectedUnit!.isNotEmpty &&
+        _hasOccupiedBy(_selectedUnit!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nhà đã có người đăng'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   String _generateDisplayCode() {
@@ -303,6 +307,11 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           backgroundColor: Colors.red,
         ),
       );
+      return;
+    }
+
+    if (_hasOccupiedBy(_selectedUnit!)) {
+      _showError('Nhà đã có người đăng');
       return;
     }
 
@@ -469,7 +478,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Post Broker Property',
+          'Đăng giới thiệu căn hộ',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -492,8 +501,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
-                        border:
-                            Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                        border: Border.all(
+                            color: Colors.red.withValues(alpha: 0.2)),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,11 +524,11 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     ),
                   ],
                   _buildSectionHeader(
-                      'Basic Information', Icons.info_outline_rounded),
+                      'Thông tin cơ bản', Icons.info_outline_rounded),
                   const SizedBox(height: 12),
                   _buildTextField(
                     controller: _titleCtrl,
-                    label: 'Title *',
+                    label: 'Tiêu đề *',
                     hint: 'Nhập tiêu đề bài đăng',
                     icon: Icons.title_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty)
@@ -529,7 +538,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _subjectCtrl,
-                    label: 'Subject *',
+                    label: 'Chủ đề *',
                     hint: 'Nhập chủ đề',
                     icon: Icons.subject_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty)
@@ -539,15 +548,15 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _descCtrl,
-                    label: 'Description',
-                    hint: 'Description chi tiết về căn hộ...',
+                    label: 'Mô tả',
+                    hint: 'Mô tả chi tiết về căn hộ...',
                     icon: Icons.description_rounded,
                     maxLines: 4,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _priceCtrl,
-                    label: 'Price (VND) *',
+                    label: 'Giá (VND) *',
                     hint: 'Nhập giá (VD: 3500000000)',
                     icon: Icons.attach_money_rounded,
                     keyboardType: TextInputType.number,
@@ -562,10 +571,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   ),
                   const SizedBox(height: 28),
                   _buildSectionHeader(
-                      'Project Information', Icons.business_rounded),
+                      'Thông tin dự án', Icons.business_rounded),
                   const SizedBox(height: 12),
                   _buildDropdown<String>(
-                    label: 'Project *',
+                    label: 'Dự án *',
                     icon: Icons.location_city_rounded,
                     value: _selectedProject,
                     items: _projectOptions,
@@ -577,7 +586,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   if (_buildingOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<String>(
-                      label: 'Building *',
+                      label: 'Tòa nhà *',
                       icon: Icons.apartment_rounded,
                       value: _selectedBuilding,
                       items: _buildingOptions,
@@ -591,7 +600,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   if (_floorOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<int>(
-                      label: 'Floor *',
+                      label: 'Tầng *',
                       icon: Icons.layers_rounded,
                       value: _selectedFloor,
                       items: _floorOptions,
@@ -604,7 +613,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   if (_apartmentOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<String>(
-                      label: 'Apartment number *',
+                      label: 'Số căn hộ *',
                       icon: Icons.door_front_door_rounded,
                       value: _selectedApartmentNumber,
                       items: _apartmentOptions,
@@ -620,7 +629,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     _buildLocationPreview(),
                   ],
                   const SizedBox(height: 28),
-                  _buildSectionHeader('Images', Icons.photo_camera_rounded),
+                  _buildSectionHeader('Hình ảnh', Icons.photo_camera_rounded),
                   const SizedBox(height: 12),
                   _buildImageUploadButton(),
                   const SizedBox(height: 36),
@@ -808,7 +817,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   color: primaryBlue, size: 18),
               const SizedBox(width: 8),
               Text(
-                'Thông tin vị trí (tự động điền)',
+                'Thông tin địa chỉ',
                 style: TextStyle(
                   color: primaryBlue,
                   fontWeight: FontWeight.w700,
@@ -1041,7 +1050,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     Icon(Icons.send_rounded, color: Colors.white, size: 22),
                     SizedBox(width: 12),
                     Text(
-                      'Post now',
+                      'Đăng ngay',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,

@@ -1,6 +1,7 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import 'create_deposit_order_screen.dart';
@@ -16,13 +17,19 @@ class OnSiteStaffDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<OnSiteStaffDetailScreen> createState() => _OnSiteStaffDetailScreenState();
+  State<OnSiteStaffDetailScreen> createState() =>
+      _OnSiteStaffDetailScreenState();
 }
 
 class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
   static const primaryBlue = Color.fromRGBO(35, 97, 219, 1);
   static const accentYellow = Color.fromRGBO(248, 192, 52, 1);
+  final ImagePicker _picker = ImagePicker();
   bool _isAccepting = false;
+  bool _isUpdatingAppointmentTime = false;
+  bool _isUploadingViewingImage = false;
+  bool _isUploadingCompleteImage = false;
+  DateTime? _selectedAppointmentDateTime;
 
   late Map<String, dynamic> _appt;
 
@@ -34,8 +41,318 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
 
   bool _isUpdatingStatus = false;
 
+  String _appointmentId() {
+    return _appt['id']?.toString() ?? _appt['_id']?.toString() ?? '';
+  }
+
+  bool _hasImageValue(String key) {
+    final value = _appt[key];
+    if (value == null) return false;
+    return value.toString().trim().isNotEmpty;
+  }
+
+  String _resolveImageUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return '';
+    final trimmed = value.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) {
+      return ApiConfig.url(trimmed);
+    }
+    return ApiConfig.url('/$trimmed');
+  }
+
+  Future<void> _reloadAppointment() async {
+    final id = _appointmentId();
+    if (id.isEmpty) return;
+
+    try {
+      final response =
+          await http.get(ApiConfig.uri('/api/viewing-appointments/$id/'));
+      if (response.statusCode != 200 || !mounted) return;
+
+      final body = json.decode(utf8.decode(response.bodyBytes));
+      if (body is Map<String, dynamic>) {
+        setState(() {
+          _appt = {
+            ..._appt,
+            ...body,
+          };
+        });
+      }
+    } catch (_) {
+      // Keep the current UI if a silent reload fails.
+    }
+  }
+
+  Future<void> _uploadAppointmentImage(String fieldKey) async {
+    final id = _appointmentId();
+    if (id.isEmpty) return;
+
+    final file = await _picker.pickImage(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+
+    setState(() {
+      if (fieldKey == 'viewingImage') {
+        _isUploadingViewingImage = true;
+      } else {
+        _isUploadingCompleteImage = true;
+      }
+    });
+
+    try {
+      final updated = Map<String, dynamic>.from(_appt)
+        ..remove('_apartment')
+        ..remove('_user');
+
+      final request = http.MultipartRequest(
+        'PUT',
+        ApiConfig.uri('/api/viewing-appointments/$id/'),
+      );
+      request.fields['data'] = json.encode(updated);
+      request.files.add(await http.MultipartFile.fromPath(fieldKey, file.path));
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (!mounted) return;
+        Map<String, dynamic>? decodedBody;
+        final rawBody = utf8.decode(response.bodyBytes).trim();
+        if (rawBody.isNotEmpty) {
+          try {
+            final decoded = json.decode(rawBody);
+            if (decoded is Map<String, dynamic>) {
+              decodedBody = decoded;
+            }
+          } catch (_) {}
+        }
+
+        if (decodedBody != null) {
+          setState(() {
+            _appt = {
+              ..._appt,
+              ...decodedBody!,
+            };
+          });
+        } else {
+          await _reloadAppointment();
+        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              fieldKey == 'viewingImage'
+                  ? 'Đã upload viewing image'
+                  : 'Đã upload complete image',
+            ),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload thất bại: ${response.statusCode}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi upload ảnh: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (fieldKey == 'viewingImage') {
+            _isUploadingViewingImage = false;
+          } else {
+            _isUploadingCompleteImage = false;
+          }
+        });
+      }
+    }
+  }
+
+  void _showImagePreview(String title, String? rawUrl) {
+    final imageUrl = _resolveImageUrl(rawUrl);
+    if (imageUrl.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final screenHeight = MediaQuery.of(context).size.height;
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.82,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: InteractiveViewer(
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.broken_image_rounded,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAppointmentDateTime() async {
+    final now = DateTime.now();
+    final currentValue = _selectedAppointmentDateTime ??
+        (_appt['appointmentTime'] != null &&
+                _appt['appointmentTime'].toString().isNotEmpty
+            ? DateTime.tryParse(_appt['appointmentTime'].toString())?.toLocal()
+            : null) ??
+        now;
+
+    final date = await showDatePicker(
+      context: context,
+      initialDate: currentValue.isBefore(now) ? now : currentValue,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 3),
+    );
+    if (date == null || !mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime:
+          TimeOfDay(hour: currentValue.hour, minute: currentValue.minute),
+    );
+    if (time == null || !mounted) return;
+
+    setState(() {
+      _selectedAppointmentDateTime =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
+  }
+
+  Future<void> _updateAppointmentDateTime() async {
+    if (_selectedAppointmentDateTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn ngày giờ trước khi bấm OK'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final id = _appointmentId();
+    if (id.isEmpty) return;
+
+    setState(() {
+      _isUpdatingAppointmentTime = true;
+    });
+
+    try {
+      final updated = Map<String, dynamic>.from(_appt)
+        ..remove('_apartment')
+        ..remove('_user');
+      final isoUtc = _selectedAppointmentDateTime!.toUtc().toIso8601String();
+      updated['appointmentTime'] = isoUtc;
+
+      final response = await http.put(
+        ApiConfig.uri('/api/viewing-appointments/$id/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updated),
+      );
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        setState(() {
+          _appt['appointmentTime'] = isoUtc;
+          _selectedAppointmentDateTime = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Đã cập nhật thời gian hẹn'),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi cập nhật thời gian: ${response.statusCode}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi kết nối: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingAppointmentTime = false;
+        });
+      }
+    }
+  }
+
   Future<void> _updateStatus(String newStatus) async {
-    final id = _appt['id']?.toString() ?? '';
+    final id = _appointmentId();
     if (id.isEmpty) return;
 
     setState(() {
@@ -83,7 +400,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi kết nối: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Lỗi kết nối: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -110,7 +428,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm cập nhật'),
-        content: Text('Bạn có chắc chắn muốn chuyển trạng thái thành "$label"?'),
+        content:
+            Text('Bạn có chắc chắn muốn chuyển trạng thái thành "$label"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -125,7 +444,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                 _updateStatus(newStatus);
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: primaryBlue, foregroundColor: Colors.white),
             child: const Text('Confirm'),
           ),
         ],
@@ -134,11 +454,24 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
   }
 
   void _showCompleteConfirmation() {
+    if (!_hasImageValue('viewingImage') || !_hasImageValue('completeImage')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Cần đủ ảnh  xem nhà và hoàn thành xem nhà trước khi close deal'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm hoàn thành', style: TextStyle(color: Colors.red)),
-        content: const Text('Khi đã close deal sẽ không thể hoàn tác. Confirm?'),
+        title: const Text('Confirm hoàn thành',
+            style: TextStyle(color: Colors.red)),
+        content:
+            const Text('Khi đã close deal sẽ không thể hoàn tác. Confirm?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -149,7 +482,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
               Navigator.pop(context);
               _updateStatus('Hoan thanh');
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, foregroundColor: Colors.white),
             child: const Text('Chắc chắn'),
           ),
         ],
@@ -158,7 +492,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
   }
 
   Future<void> _acceptAppointment() async {
-    final id = _appt['id']?.toString() ?? '';
+    final id = _appointmentId();
     if (id.isEmpty) return;
 
     setState(() {
@@ -205,7 +539,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi kết nối: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Lỗi kết nối: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -245,8 +580,13 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     switch (status) {
       case 'Yeu cau xem':
         return Colors.orange;
+      case 'Dang lien he':
+        return Colors.deepOrange;
       case 'Da xac nhan':
+      case 'Da xac nhan lich':
         return Colors.blue;
+      case 'Dang xem':
+        return Colors.purple;
       case 'Hoan thanh':
         return Colors.green;
       case 'Huy':
@@ -260,8 +600,14 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     switch (status) {
       case 'Yeu cau xem':
         return 'Viewing Request';
+      case 'Dang lien he':
+        return 'Contacting';
       case 'Da xac nhan':
         return 'Đã xác nhận';
+      case 'Da xac nhan lich':
+        return 'Schedule confirmed';
+      case 'Dang xem':
+        return 'Viewing';
       case 'Hoan thanh':
         return 'Completed';
       case 'Huy':
@@ -269,6 +615,116 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       default:
         return status ?? 'Unknown';
     }
+  }
+
+  Widget _buildImageUploadCard({
+    required String title,
+    required bool hasImage,
+    required String imageUrl,
+    required bool isUploading,
+    required bool canUpload,
+    required VoidCallback onUpload,
+    required VoidCallback onView,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: hasImage
+              ? Colors.green.withOpacity(0.35)
+              : primaryBlue.withOpacity(0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                hasImage ? Icons.check_circle_rounded : Icons.image_outlined,
+                color: hasImage ? Colors.green : primaryBlue,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            hasImage ? 'Đã có ảnh' : 'Chưa có ảnh',
+            style: TextStyle(
+              fontSize: 13,
+              color: hasImage ? Colors.green[700] : Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (imageUrl.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              imageUrl,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: isUploading || !canUpload ? null : onUpload,
+                  icon: isUploading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.upload_rounded, size: 18),
+                  label: Text(hasImage ? 'Upload lại' : 'Upload ảnh'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryBlue,
+                    side: BorderSide(color: primaryBlue.withOpacity(0.35)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: hasImage ? onView : null,
+                  icon: const Icon(Icons.visibility_rounded, size: 18),
+                  label: const Text('Xem ảnh'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasImage ? primaryBlue : Colors.grey[350],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -281,7 +737,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     final appointmentTime = _appt['appointmentTime']?.toString();
 
     final isMine = staffInCharge?.toString() == widget.currentUser.id;
-    final hasStaff = staffInCharge != null && staffInCharge.toString().isNotEmpty;
+    final hasStaff =
+        staffInCharge != null && staffInCharge.toString().isNotEmpty;
 
     final customerPhone = customer?['phone']?.toString() ?? '';
     final userPhone = user?['phone']?.toString() ?? '';
@@ -289,11 +746,14 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         userPhone.isNotEmpty &&
         customerPhone != userPhone;
 
-    final aptTitle = apartment?['title']?.toString() ?? 'Căn hộ #${_appt['apartmentId']}';
+    final aptTitle =
+        apartment?['title']?.toString() ?? 'Căn hộ #${_appt['apartmentId']}';
     final aptProject = apartment?['projectInfo']?['project']?.toString() ?? '';
-    final aptBuilding = apartment?['projectInfo']?['building']?.toString() ?? '';
+    final aptBuilding =
+        apartment?['projectInfo']?['building']?.toString() ?? '';
     final aptFloor = apartment?['projectInfo']?['floor']?.toString() ?? '';
-    final aptNumber = apartment?['projectInfo']?['apartmentNumber']?.toString() ?? '';
+    final aptNumber =
+        apartment?['projectInfo']?['apartmentNumber']?.toString() ?? '';
     final aptWard = apartment?['location']?['ward']?.toString() ?? '';
     final aptCommune = apartment?['location']?['commune']?.toString() ?? '';
     final aptPrice = apartment?['price'];
@@ -306,6 +766,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
 
     final customerName = customer?['name']?.toString() ?? '';
     final customerPhoneDisplay = customer?['phone']?.toString() ?? '';
+    final viewingImage = _appt['viewingImage']?.toString() ?? '';
+    final completeImage = _appt['completeImage']?.toString() ?? '';
+    final hasViewingImage = _hasImageValue('viewingImage');
+    final hasCompleteImage = _hasImageValue('completeImage');
+    final canFinishAppointment =
+        status == 'Dang xem' && hasViewingImage && hasCompleteImage;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
@@ -351,7 +817,9 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
             boxShadow: [
               BoxShadow(
                 color: isMine
-                    ? (status == 'Hoan thanh' ? Colors.green.withOpacity(0.4) : Colors.blue.withOpacity(0.4))
+                    ? (status == 'Hoan thanh'
+                        ? Colors.green.withOpacity(0.4)
+                        : Colors.blue.withOpacity(0.4))
                     : primaryBlue.withOpacity(0.3),
                 blurRadius: 20,
                 spreadRadius: 2,
@@ -370,10 +838,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
                     decoration: BoxDecoration(
                       color: _statusColor(status).withOpacity(0.08),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(21)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(21)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -388,13 +858,19 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: _statusColor(status).withOpacity(0.5), width: 1.5),
+                            border: Border.all(
+                                color: _statusColor(status).withOpacity(0.5),
+                                width: 1.5),
                             boxShadow: [
-                              BoxShadow(color: _statusColor(status).withOpacity(0.15), blurRadius: 4, offset: const Offset(0, 2)),
+                              BoxShadow(
+                                  color: _statusColor(status).withOpacity(0.15),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2)),
                             ],
                           ),
                           child: Text(
@@ -415,38 +891,141 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ── APPOINTMENT TIME ────────────────────────────
-                        _SectionHeader(icon: Icons.schedule_rounded, label: 'Thời gian hẹn'),
+                        _SectionHeader(
+                            icon: Icons.schedule_rounded,
+                            label: 'Thời gian hẹn'),
                         const SizedBox(height: 10),
-                        _InfoRow(Icons.calendar_today_rounded, _formatDateTime(appointmentTime)),
+                        _InfoRow(Icons.calendar_today_rounded,
+                            _formatDateTime(appointmentTime)),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7FAFF),
+                            borderRadius: BorderRadius.circular(12),
+                            border:
+                                Border.all(color: primaryBlue.withOpacity(0.2)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _isUpdatingAppointmentTime
+                                      ? null
+                                      : _pickAppointmentDateTime,
+                                  icon: const Icon(Icons.edit_calendar_rounded,
+                                      size: 18),
+                                  label: Text(
+                                    _selectedAppointmentDateTime == null
+                                        ? 'Chọn ngày giờ mới'
+                                        : _formatDateTime(
+                                            _selectedAppointmentDateTime!
+                                                .toUtc()
+                                                .toIso8601String(),
+                                          ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: primaryBlue,
+                                    side: BorderSide(
+                                        color: primaryBlue.withOpacity(0.45)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                height: 40,
+                                child: ElevatedButton(
+                                  onPressed: _isUpdatingAppointmentTime
+                                      ? null
+                                      : _updateAppointmentDateTime,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryBlue,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: _isUpdatingAppointmentTime
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Text('OK'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildImageUploadCard(
+                          title: 'Hình ảnh xem nhà',
+                          hasImage: hasViewingImage,
+                          imageUrl: viewingImage,
+                          isUploading: _isUploadingViewingImage,
+                          canUpload: isMine,
+                          onUpload: () =>
+                              _uploadAppointmentImage('viewingImage'),
+                          onView: () =>
+                              _showImagePreview('Viewing Image', viewingImage),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildImageUploadCard(
+                          title: 'Hình ảnh hoàn thành',
+                          hasImage: hasCompleteImage,
+                          imageUrl: completeImage,
+                          isUploading: _isUploadingCompleteImage,
+                          canUpload: isMine,
+                          onUpload: () =>
+                              _uploadAppointmentImage('completeImage'),
+                          onView: () => _showImagePreview(
+                              'Complete Image', completeImage),
+                        ),
 
                         const SizedBox(height: 16),
                         const Divider(height: 1),
                         const SizedBox(height: 16),
 
                         // ── APARTMENT INFO ──────────────────────────────
-                        _SectionHeader(icon: Icons.apartment_rounded, label: 'Apartment Information'),
+                        _SectionHeader(
+                            icon: Icons.apartment_rounded,
+                            label: 'Apartment Information'),
                         const SizedBox(height: 10),
                         _InfoRow(Icons.home_work_rounded, aptTitle),
                         if (aptProject.isNotEmpty || aptBuilding.isNotEmpty)
-                          _InfoRow(Icons.business_rounded, 'Dự án / Tòa: $aptProject - $aptBuilding'),
+                          _InfoRow(Icons.business_rounded,
+                              'Dự án / Tòa: $aptProject - $aptBuilding'),
                         if (aptFloor.isNotEmpty || aptNumber.isNotEmpty)
-                          _InfoRow(Icons.layers_rounded, 'Tầng $aptFloor - Căn $aptNumber'),
+                          _InfoRow(Icons.layers_rounded,
+                              'Tầng $aptFloor - Căn $aptNumber'),
                         if (aptWard.isNotEmpty || aptCommune.isNotEmpty)
-                          _InfoRow(Icons.location_on_rounded, '$aptWard, $aptCommune'),
+                          _InfoRow(Icons.location_on_rounded,
+                              '$aptWard, $aptCommune'),
                         if (aptPrice != null)
                           _InfoRow(Icons.attach_money_rounded,
                               'Giá: ${_formatPrice(aptPrice)}'),
                         if (aptStatus.isNotEmpty)
-                          _InfoRow(Icons.info_outline_rounded, 'Status: $aptStatus'),
+                          _InfoRow(
+                              Icons.info_outline_rounded, 'Status: $aptStatus'),
 
                         const SizedBox(height: 16),
                         const Divider(height: 1),
                         const SizedBox(height: 16),
 
                         // ── USER / BOOKER INFO ──────────────────────────
-                        _SectionHeader(icon: Icons.person_rounded, label: 'Booker'),
+                        _SectionHeader(
+                            icon: Icons.person_rounded, label: 'Booker'),
                         const SizedBox(height: 10),
-                        _InfoRow(Icons.badge_rounded, userName.isNotEmpty ? userName : 'Unknown'),
+                        _InfoRow(Icons.badge_rounded,
+                            userName.isNotEmpty ? userName : 'Unknown'),
                         if (userPhone2.isNotEmpty)
                           _InfoRow(Icons.phone_rounded, userPhone2),
 
@@ -475,7 +1054,9 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         if (hasStaff) ...[
                           _InfoRow(
                             Icons.manage_accounts_rounded,
-                            isMine ? '✅ Bạn đang phụ trách' : '👤 Đã có nhân viên phụ trách',
+                            isMine
+                                ? '✅ Bạn đang phụ trách'
+                                : '👤 Đã có nhân viên phụ trách',
                             iconColor: isMine ? Colors.green : Colors.blueGrey,
                           ),
                         ],
@@ -501,12 +1082,17 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2),
                           )
-                        : const Icon(Icons.assignment_turned_in_rounded, size: 22),
+                        : const Icon(Icons.assignment_turned_in_rounded,
+                            size: 22),
                     label: Text(
                       _isAccepting ? 'Đang Nhận Việc...' : 'Nhận Việc',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryBlue,
@@ -530,12 +1116,14 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.green.shade300),
+                                border:
+                                    Border.all(color: Colors.green.shade300),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.check_circle_rounded, color: Colors.green[600], size: 22),
+                                  Icon(Icons.check_circle_rounded,
+                                      color: Colors.green[600], size: 22),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Completed Jobs',
@@ -558,11 +1146,18 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                   final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => CreateDepositOrderScreen(
-                                        apartmentId: widget.appointment['apartmentId']?.toString() ?? '',
+                                      builder: (context) =>
+                                          CreateDepositOrderScreen(
+                                        apartmentId: widget
+                                                .appointment['apartmentId']
+                                                ?.toString() ??
+                                            '',
                                         staffId: widget.currentUser?.id ?? '',
-                                        appointmentId: widget.appointment['_id']?.toString() ?? 
-                                            widget.appointment['id']?.toString() ?? '',
+                                        appointmentId: widget.appointment['_id']
+                                                ?.toString() ??
+                                            widget.appointment['id']
+                                                ?.toString() ??
+                                            '',
                                         currentUser: widget.currentUser,
                                       ),
                                     ),
@@ -572,10 +1167,14 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                     Navigator.pop(context, true);
                                   }
                                 },
-                                icon: const Icon(Icons.request_quote_rounded, size: 22),
+                                icon: const Icon(Icons.request_quote_rounded,
+                                    size: 22),
                                 label: const Text(
                                   'Deposit Request',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: accentYellow,
@@ -592,69 +1191,156 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         )
                       : (status == 'Da yeu cau coc')
                           ? const SizedBox.shrink()
-                          : Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: primaryBlue.withOpacity(0.3)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: primaryBlue.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                        color: primaryBlue.withOpacity(0.3)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: primaryBlue.withOpacity(0.05),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  const Text(
-                                    'Status:',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
+                                  child: Row(
+                                    children: [
+                                      const Text(
+                                        'Status:',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _isUpdatingStatus
+                                            ? const Center(
+                                                child: SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    color: primaryBlue,
+                                                    strokeWidth: 2,
+                                                  ),
+                                                ),
+                                              )
+                                            : DropdownButtonHideUnderline(
+                                                child: DropdownButton<String>(
+                                                  value: [
+                                                    'Dang lien he',
+                                                    'Da xac nhan lich',
+                                                    'Dang xem',
+                                                    'Yeu cau xem'
+                                                  ].contains(status)
+                                                      ? status
+                                                      : null,
+                                                  hint: const Text(
+                                                      'Chọn trạng thái'),
+                                                  isExpanded: true,
+                                                  icon: const Icon(
+                                                    Icons
+                                                        .arrow_drop_down_rounded,
+                                                    color: primaryBlue,
+                                                  ),
+                                                  style: const TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: primaryBlue,
+                                                  ),
+                                                  items: const [
+                                                    DropdownMenuItem(
+                                                      value: 'Yeu cau xem',
+                                                      child: Text(
+                                                          'Viewing Request'),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'Dang lien he',
+                                                      child: Text('Contacting'),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'Da xac nhan lich',
+                                                      child: Text(
+                                                          'Schedule confirmed'),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'Dang xem',
+                                                      child: Text('Viewing'),
+                                                    ),
+                                                  ],
+                                                  onChanged: (val) {
+                                                    if (val != null) {
+                                                      _showStatusConfirmation(
+                                                          val);
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                if (canFinishAppointment)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 54,
+                                    child: ElevatedButton.icon(
+                                      onPressed: _isUpdatingStatus
+                                          ? null
+                                          : _showCompleteConfirmation,
+                                      icon: const Icon(
+                                        Icons.verified_rounded,
+                                        size: 22,
+                                      ),
+                                      label: const Text(
+                                        'Hoàn thành',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                else if (status == 'Dang xem')
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade50,
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: Colors.orange.shade200,
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Cần upload đủ viewingImage và completeImage để hiện nút Hoàn thành',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.orange,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _isUpdatingStatus
-                                        ? const Center(
-                                            child: SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: CircularProgressIndicator(color: primaryBlue, strokeWidth: 2),
-                                            ),
-                                          )
-                                        : DropdownButtonHideUnderline(
-                                            child: DropdownButton<String>(
-                                              value: ['Dang lien he', 'Da xac nhan lich', 'Dang xem', 'Hoan thanh', 'Yeu cau xem'].contains(status) 
-                                                  ? status 
-                                                  : null,
-                                              hint: const Text('Chọn trạng thái'),
-                                              isExpanded: true,
-                                              icon: const Icon(Icons.arrow_drop_down_rounded, color: primaryBlue),
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                color: primaryBlue,
-                                              ),
-                                              items: const [
-                                                DropdownMenuItem(value: 'Yeu cau xem', child: Text('Viewing Request')),
-                                                DropdownMenuItem(value: 'Dang lien he', child: Text('Contacting')),
-                                                DropdownMenuItem(value: 'Da xac nhan lich', child: Text('Schedule confirmed')),
-                                                DropdownMenuItem(value: 'Dang xem', child: Text('Viewing')),
-                                                DropdownMenuItem(value: 'Hoan thanh', child: Text('Completed', style: TextStyle(color: Colors.green))),
-                                              ],
-                                              onChanged: (val) {
-                                                if (val != null) _showStatusConfirmation(val);
-                                              },
-                                            ),
-                                          ),
-                                  ),
-                                ],
-                              ),
+                              ],
                             )
                   : Container(
                       width: double.infinity,
@@ -667,7 +1353,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.lock_outline_rounded, color: Colors.grey[500], size: 22),
+                          Icon(Icons.lock_outline_rounded,
+                              color: Colors.grey[500], size: 22),
                           const SizedBox(width: 8),
                           Text(
                             'Đã có nhân viên phụ trách',
@@ -761,4 +1448,3 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-
