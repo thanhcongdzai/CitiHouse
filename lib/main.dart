@@ -3,17 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/api_config.dart';
-import 'screens/dashboard.dart';
-import 'screens/news.dart';
-import 'screens/service_screen.dart';
 import 'screens/account.dart';
-import 'screens/login_screen.dart';
-import 'screens/on_site_staff_screen.dart';
-import 'screens/staff_approval_screen.dart';
-import 'screens/apartment_approval_staff_screen.dart';
-import 'screens/deposit_approval_staff_screen.dart';
 import 'screens/admin_screen.dart';
+import 'screens/apartment_approval_staff_screen.dart';
+import 'screens/dashboard.dart';
+import 'screens/deposit_approval_staff_screen.dart';
+import 'screens/image_approval_staff_screen.dart';
+import 'screens/legal_approval_staff_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/news.dart';
+import 'screens/on_site_staff_screen.dart';
+import 'screens/owner_approval_staff_screen.dart';
 import 'screens/post_apartment_screen.dart';
+import 'screens/service_screen.dart';
+import 'screens/staff_approval_screen.dart';
 import 'services/auth_service.dart';
 import 'models/user.dart';
 
@@ -57,7 +60,8 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+class _MainScreenState extends State<MainScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   User? _currentUser;
   bool _authChecked = false;
@@ -108,7 +112,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           });
         }
       } else {
-        // Invalid session, clear it
         await AuthService.logout();
         if (mounted) setState(() => _authChecked = true);
       }
@@ -117,15 +120,11 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _handleLoginSuccess() async {
-    // Reload user from SharedPreferences then fetch from API
-    final userId = await AuthService.getLoggedInUserId();
-    if (userId != null && userId.isNotEmpty) {
-      await _fetchAndSetUser(userId);
-    }
-    // Navigate to dashboard after successful login
+  Future<void> _handleLoginSuccess(User user) async {
     if (mounted) {
       setState(() {
+        _currentUser = user;
+        _authChecked = true;
         _selectedIndex = 0;
       });
     }
@@ -146,9 +145,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     });
   }
 
+  String get _normalizedRole => _currentUser?.role.trim() ?? '';
+
   @override
   Widget build(BuildContext context) {
-    // Still loading auth state — show splash
     if (!_authChecked) {
       return const Scaffold(
         body: Center(
@@ -157,37 +157,66 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       );
     }
 
-    // Not logged in → show login as the root screen
     if (_currentUser == null) {
       return LoginScreen(onLoginSuccess: _handleLoginSuccess);
     }
 
-    // accountStaff role → show staff approval screen directly
-    if (_currentUser!.role == 'accountStaff') {
-      return StaffApprovalScreen(currentUser: _currentUser!, onLogout: _handleLogout);
-    }
-    
-    // onSiteStaff role → show on site staff screen directly
-    if (_currentUser!.role == 'onSiteStaff') {
-      return OnSiteStaffScreen(currentUser: _currentUser!, onLogout: _handleLogout);
-    }
-    
-    // apartmentApprovalStaff role → show apartment approval staff screen directly
-    if (_currentUser!.role == 'apartmentApprovalStaff') {
-      return ApartmentApprovalStaffScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    if (_normalizedRole == 'accountStaff') {
+      return StaffApprovalScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
     }
 
-    // depositApprovalStaff role → show deposit approval staff screen directly
-    if (_currentUser!.role == 'depositApprovalStaff') {
-      return DepositApprovalStaffScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    if (_normalizedRole == 'onSiteStaff') {
+      return OnSiteStaffScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
     }
 
-    // admin role → show admin screen directly
-    if (_currentUser!.role == 'admin') {
-      return AdminScreen(currentUser: _currentUser!, onLogout: _handleLogout);
+    if (_normalizedRole == 'apartmentApprovalStaff') {
+      return ApartmentApprovalStaffScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
     }
 
-    // Logged in → show main app with bottom navigation
+    if (_normalizedRole == 'imageApprovalStaff') {
+      return ImageApprovalStaffScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
+    }
+
+    if (_normalizedRole == 'legalApprovalStaff') {
+      return LegalApprovalStaffScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
+    }
+
+    if (_normalizedRole == 'ownerApprovalStaff') {
+      return OwnerApprovalStaffScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
+    }
+
+    if (_normalizedRole == 'depositApprovalStaff') {
+      return DepositApprovalStaffScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
+    }
+
+    if (_normalizedRole == 'admin') {
+      return AdminScreen(
+        currentUser: _currentUser!,
+        onLogout: _handleLogout,
+      );
+    }
+
     final List<Widget> widgetOptions = [
       DashboardScreen(currentUser: _currentUser),
       const NewsScreen(),
@@ -208,7 +237,12 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     const Color primaryBlue = Color.fromRGBO(35, 97, 219, 1);
     const Color accentYellow = Color.fromRGBO(248, 192, 52, 1);
 
-    Widget navItem(int index, IconData icon, IconData selectedIcon, String label) {
+    Widget navItem(
+      int index,
+      IconData icon,
+      IconData selectedIcon,
+      String label,
+    ) {
       final bool selected = _selectedIndex == index;
       return InkWell(
         onTap: () => _onItemTapped(index),
@@ -256,18 +290,21 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // Left + Right nav items
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   navItem(0, Icons.home_outlined, Icons.home, 'Dashboard'),
                   navItem(1, Icons.article_outlined, Icons.article, 'News'),
-                  const SizedBox(width: 72), // space for center button
-                  navItem(2, Icons.design_services_outlined, Icons.design_services, 'Service'),
+                  const SizedBox(width: 72),
+                  navItem(
+                    2,
+                    Icons.design_services_outlined,
+                    Icons.design_services,
+                    'Service',
+                  ),
                   navItem(3, Icons.person_outline, Icons.person, 'Account'),
                 ],
               ),
-              // Center prominent + button with 3D + multi-layer glow animation
               Positioned(
                 top: -20,
                 child: AnimatedBuilder(
@@ -293,11 +330,24 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                         setState(() {
                           _isCenterPressed = false;
                         });
-                      },
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
+                        },
+                        onTap: () {
+                          if ((_currentUser?.status.trim().toLowerCase() ??
+                                  '') !=
+                              'approved') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Tài khoản chưa được Approved nên không thể đăng nhà',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
                             builder: (_) => PostApartmentScreen(currentUser: _currentUser),
                           ),
                         );
@@ -310,7 +360,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // rotating soft white layers (elliptical glow)
                               Transform.rotate(
                                 angle: 2 * 3.1415926 * _centerPulse.value,
                                 child: Container(
@@ -353,7 +402,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                                   ),
                                 ),
                               ),
-                              // main 3D button
                               Container(
                                 width: 60,
                                 height: 60,
@@ -379,7 +427,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                                       offset: const Offset(0, 8),
                                     ),
                                     BoxShadow(
-                                      color: accentYellow.withOpacity(0.55 + 0.25 * _centerPulse.value),
+                                      color: accentYellow.withOpacity(
+                                        0.55 + 0.25 * _centerPulse.value,
+                                      ),
                                       blurRadius: 20 + 6 * _centerPulse.value,
                                       spreadRadius: 1.5 + 2 * _centerPulse.value,
                                       offset: const Offset(0, 4),

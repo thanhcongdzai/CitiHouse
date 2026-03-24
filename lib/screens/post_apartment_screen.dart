@@ -53,6 +53,9 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
   File? _coverImage;
   List<File> _subImages = [];
 
+  bool get _isApprovedUser =>
+      widget.currentUser?.status.trim().toLowerCase() == 'approved';
+
   @override
   void initState() {
     super.initState();
@@ -83,14 +86,14 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       if (resp.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(resp.bodyBytes));
         setState(() {
-          final projects = data
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
+          final projects =
+              data.map((e) => Map<String, dynamic>.from(e)).toList();
           final availableProjects =
               projects.where(_isProjectUnoccupied).toList();
 
           // Fallback: if backend format differs, still allow selecting projects.
-          _allProjects = availableProjects.isNotEmpty ? availableProjects : projects;
+          _allProjects =
+              availableProjects.isNotEmpty ? availableProjects : projects;
           final names = <String>{};
           for (var p in _allProjects) {
             if (p['project'] != null && p['project'].toString().isNotEmpty) {
@@ -123,7 +126,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         return;
       }
 
-      final filtered = _allProjects.where((p) => p['project'] == project).toList();
+      final filtered =
+          _allProjects.where((p) => p['project'] == project).toList();
       final buildings = <String>{};
       for (var p in filtered) {
         if (p['building'] != null && p['building'].toString().isNotEmpty) {
@@ -150,7 +154,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       }
 
       final filtered = _allProjects
-          .where((p) => p['project'] == _selectedProject && p['building'] == building)
+          .where((p) =>
+              p['project'] == _selectedProject && p['building'] == building)
           .toList();
 
       final floors = <int>{};
@@ -183,7 +188,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
 
       final apts = <String>{};
       for (var p in filtered) {
-        if (p['apartmentNumber'] != null && p['apartmentNumber'].toString().isNotEmpty) {
+        if (p['apartmentNumber'] != null &&
+            p['apartmentNumber'].toString().isNotEmpty) {
           apts.add(p['apartmentNumber'].toString());
         }
       }
@@ -284,6 +290,11 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_isApprovedUser) {
+      _showError('Tài khoản chưa được Approved nên không thể đăng nhà');
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
     if (_selectedUnit == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -317,21 +328,9 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       "houseStatus": "Pending",
       "owner": {},
       "verifications": {
-        "image": {
-          "status": "",
-          "staffId": null,
-          "updatedAt": ""
-        },
-        "legal": {
-          "status": "",
-          "staffId": null,
-          "updatedAt": ""
-        },
-        "ownerIntent": {
-          "status": "",
-          "staffId": null,
-          "updatedAt": ""
-        }
+        "image": {"status": "Pending", "staffId": null, "updatedAt": ""},
+        "legal": {"status": "Pending", "staffId": null, "updatedAt": ""},
+        "ownerIntent": {"status": "Pending", "staffId": null, "updatedAt": ""}
       },
       "postedBy": widget.currentUser?.id ?? '',
     };
@@ -387,7 +386,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         if (projectId.isEmpty || apartmentId == null || apartmentId.isEmpty) {
           if (!mounted) return;
           setState(() => _isSubmitting = false);
-          _showError('Dang nha thanh cong nhung khong lay duoc du lieu de cap nhat occupiedBy.');
+          _showError(
+              'Dang nha thanh cong nhung khong lay duoc du lieu de cap nhat occupiedBy.');
           return;
         }
 
@@ -399,7 +399,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         } catch (e) {
           if (!mounted) return;
           setState(() => _isSubmitting = false);
-          _showError('Dang nha thanh cong nhung cap nhat occupiedBy that bai: $e');
+          _showError(
+              'Dang nha thanh cong nhung cap nhat occupiedBy that bai: $e');
           return;
         }
 
@@ -411,11 +412,13 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
               children: [
                 Icon(Icons.check_circle_rounded, color: Colors.white),
                 SizedBox(width: 12),
-                Text('Đăng nhà thành công!', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Đăng nhà thành công!',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             backgroundColor: Colors.green[700],
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
           ),
@@ -440,7 +443,9 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           children: [
             const Icon(Icons.error_rounded, color: Colors.white),
             const SizedBox(width: 12),
-            Expanded(child: Text(msg, style: const TextStyle(fontWeight: FontWeight.bold))),
+            Expanded(
+                child: Text(msg,
+                    style: const TextStyle(fontWeight: FontWeight.bold))),
           ],
         ),
         backgroundColor: Colors.red[700],
@@ -459,7 +464,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: primaryBlue),
+          icon:
+              const Icon(Icons.arrow_back_ios_new_rounded, color: primaryBlue),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -479,14 +485,46 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _buildSectionHeader('Basic Information', Icons.info_outline_rounded),
+                  if (!_isApprovedUser) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border:
+                            Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.lock_outline_rounded, color: Colors.red),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Tài khoản của bạn chưa được Approved nên không thể đăng nhà.',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w600,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  _buildSectionHeader(
+                      'Basic Information', Icons.info_outline_rounded),
                   const SizedBox(height: 12),
                   _buildTextField(
                     controller: _titleCtrl,
                     label: 'Title *',
                     hint: 'Nhập tiêu đề bài đăng',
                     icon: Icons.title_rounded,
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tiêu đề' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Vui lòng nhập tiêu đề'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -494,7 +532,9 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     label: 'Subject *',
                     hint: 'Nhập chủ đề',
                     icon: Icons.subject_rounded,
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập chủ đề' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Vui lòng nhập chủ đề'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -513,13 +553,16 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Vui lòng nhập giá';
-                      if ((int.tryParse(v.trim()) ?? 0) <= 0) return 'Giá phải lớn hơn 0';
+                      if (v == null || v.trim().isEmpty)
+                        return 'Vui lòng nhập giá';
+                      if ((int.tryParse(v.trim()) ?? 0) <= 0)
+                        return 'Giá phải lớn hơn 0';
                       return null;
                     },
                   ),
                   const SizedBox(height: 28),
-                  _buildSectionHeader('Project Information', Icons.business_rounded),
+                  _buildSectionHeader(
+                      'Project Information', Icons.business_rounded),
                   const SizedBox(height: 12),
                   _buildDropdown<String>(
                     label: 'Project *',
@@ -541,7 +584,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                       itemLabel: (v) => v,
                       onChanged: _onBuildingSelected,
                       hint: 'Chọn tòa nhà',
-                      validator: (v) => v == null ? 'Vui lòng chọn tòa nhà' : null,
+                      validator: (v) =>
+                          v == null ? 'Vui lòng chọn tòa nhà' : null,
                     ),
                   ],
                   if (_floorOptions.isNotEmpty) ...[
@@ -567,7 +611,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                       itemLabel: (v) => v,
                       onChanged: _onApartmentSelected,
                       hint: 'Chọn số căn hộ',
-                      validator: (v) => v == null ? 'Vui lòng chọn căn hộ' : null,
+                      validator: (v) =>
+                          v == null ? 'Vui lòng chọn căn hộ' : null,
                     ),
                   ],
                   if (_selectedUnit != null) ...[
@@ -594,7 +639,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [primaryBlue.withValues(alpha: 0.15), accentYellow.withValues(alpha: 0.15)],
+              colors: [
+                primaryBlue.withValues(alpha: 0.15),
+                accentYellow.withValues(alpha: 0.15)
+              ],
             ),
             borderRadius: BorderRadius.circular(10),
           ),
@@ -646,7 +694,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           labelText: label,
           hintText: hint,
           prefixIcon: Icon(icon, color: primaryBlue, size: 22),
-          labelStyle: const TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
+          labelStyle:
+              const TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -709,7 +758,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: primaryBlue, size: 22),
-          labelStyle: const TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
+          labelStyle:
+              const TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
@@ -718,9 +768,11 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
             borderSide: const BorderSide(color: Colors.red, width: 1.5),
           ),
         ),
-        hint: Text(hint, style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+        hint:
+            Text(hint, style: TextStyle(color: Colors.grey[400], fontSize: 14)),
         icon: const Icon(Icons.keyboard_arrow_down_rounded, color: primaryBlue),
-        style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+            fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
         items: items
             .map((item) => DropdownMenuItem<T>(
                   value: item,
@@ -737,7 +789,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primaryBlue.withValues(alpha: 0.07), accentYellow.withValues(alpha: 0.07)],
+          colors: [
+            primaryBlue.withValues(alpha: 0.07),
+            accentYellow.withValues(alpha: 0.07)
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -749,7 +804,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, color: primaryBlue, size: 18),
+              const Icon(Icons.location_on_rounded,
+                  color: primaryBlue, size: 18),
               const SizedBox(width: 8),
               Text(
                 'Thông tin vị trí (tự động điền)',
@@ -774,11 +830,15 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Text('$key: ', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          Text('$key: ',
+              style: TextStyle(color: Colors.grey[600], fontSize: 13)),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: Colors.black87),
             ),
           ),
         ],
@@ -789,7 +849,11 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
   Widget _buildImageUploadButton() {
     final int totalImages = (_coverImage != null ? 1 : 0) + _subImages.length;
     return GestureDetector(
-      onTap: _navigateToImagePicker,
+      onTap: _isApprovedUser
+          ? _navigateToImagePicker
+          : () => _showError(
+                'Tài khoản chưa được Approved nên không thể đăng nhà',
+              ),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -882,7 +946,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                               left: 0,
                               right: 0,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 2),
                                 decoration: BoxDecoration(
                                   color: primaryBlue.withValues(alpha: 0.85),
                                   borderRadius: const BorderRadius.only(
@@ -928,7 +993,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: _isSubmitting
+            colors: (_isSubmitting || !_isApprovedUser)
                 ? [Colors.grey[400]!, Colors.grey[400]!]
                 : [primaryBlue, const Color(0xFF1A4FBF)],
             begin: Alignment.topLeft,
@@ -946,17 +1011,29 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                 ],
         ),
         child: ElevatedButton(
-          onPressed: _isSubmitting ? null : _submit,
+          onPressed: _isSubmitting
+              ? null
+              : () {
+                  if (!_isApprovedUser) {
+                    _showError(
+                      'Tài khoản chưa được Approved nên không thể đăng nhà',
+                    );
+                    return;
+                  }
+                  _submit();
+                },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           child: _isSubmitting
               ? const SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2.5),
                 )
               : const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -979,4 +1056,3 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     );
   }
 }
-

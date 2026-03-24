@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../models/user.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  final VoidCallback onLoginSuccess;
+  final Future<void> Function(User user) onLoginSuccess;
   const LoginScreen({super.key, required this.onLoginSuccess});
 
   @override
@@ -49,10 +50,10 @@ class _LoginScreenState extends State<LoginScreen> {
         if (user.isNotEmpty) {
           if (user['isActive'] == true) {
             final userId = user['id']?.toString() ?? '';
+            final currentUser = User.fromJson(user);
             await AuthService.saveLoginState(userId);
             if (mounted) {
-              widget
-                  .onLoginSuccess(); // MainScreen's setState will replace the LoginScreen
+              await widget.onLoginSuccess(currentUser);
             }
           } else {
             _showError('This account is not eligible yet.');

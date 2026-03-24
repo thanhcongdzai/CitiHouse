@@ -14,6 +14,7 @@ class Apartment {
   final String displayCode;
   final String imageUrl;
   final String houseStatus;
+  final String finalApprove;
   final Map<String, dynamic>? verifications;
 
   Apartment({
@@ -32,6 +33,7 @@ class Apartment {
     required this.displayCode,
     required this.imageUrl,
     required this.houseStatus,
+    this.finalApprove = '',
     this.verifications,
   });
 
@@ -82,6 +84,7 @@ class Apartment {
       displayCode: json['displayCode'] as String? ?? '',
       imageUrl: resolvedImageUrl,
       houseStatus: json['houseStatus'] as String? ?? '',
+      finalApprove: json['finalApprove']?.toString() ?? '',
       verifications: json['verifications'] as Map<String, dynamic>?,
     );
   }

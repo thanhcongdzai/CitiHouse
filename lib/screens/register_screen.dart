@@ -1,9 +1,8 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
-import 'package:intl/intl.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,97 +15,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final Color primaryBlue = const Color.fromRGBO(35, 97, 219, 1);
-  final Color accentYellow = const Color.fromRGBO(248, 192, 52, 1);
 
   bool _isLoading = false;
   bool _obscurePassword = true;
-  final RegExp _emailRegex = RegExp(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
   final RegExp _phoneRegex = RegExp(r'^\d{10}$');
   final RegExp _cccdRegex = RegExp(r'^\d{12}$');
   final RegExp _passwordLetterRegex = RegExp(r'[A-Za-z]');
   final RegExp _passwordUppercaseRegex = RegExp(r'[A-Z]');
   final RegExp _passwordNumberRegex = RegExp(r'\d');
 
-  // Form Controllers
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _cccdController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  DateTime? _selectedDate;
-  String _selectedGender = 'Male';
-  final List<String> _genders = ['Male', 'Female', 'Other'];
-
-  bool _isAtLeast18(DateTime dateOfBirth) {
-    final now = DateTime.now();
-    final age = now.year - dateOfBirth.year;
-    final hasHadBirthdayThisYear = now.month > dateOfBirth.month ||
-        (now.month == dateOfBirth.month && now.day >= dateOfBirth.day);
-    return age > 18 || (age == 18 && hasHadBirthdayThisYear);
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final today = DateTime.now();
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime(today.year - 18, today.month, today.day),
-      firstDate: DateTime(1900),
-      lastDate: today,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: primaryBlue,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _selectedDate) {
-      if (!_isAtLeast18(picked)) {
-        _showError('You must be at least 18 years old to register');
-        return;
-      }
-
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedDate == null) {
-      _showError('Please select your Date of Birth');
-      return;
-    }
-    if (!_isAtLeast18(_selectedDate!)) {
-      _showError('You must be at least 18 years old to register');
-      return;
-    }
 
     setState(() {
       _isLoading = true;
     });
 
     final userData = {
-      "firstName": _firstNameController.text.trim(),
-      "lastName": _lastNameController.text.trim(),
-      "phone": _phoneController.text.trim(),
-      "dob": DateFormat('yyyy-MM-dd').format(_selectedDate!),
-      "cccd": _cccdController.text.trim(),
-      "gender": _selectedGender,
-      "address": _addressController.text.trim(),
-      "email": _emailController.text.trim(),
-      "password": _passwordController.text.trim(),
-      "isActive": false,  // New accounts require approval
-      "role": "User"
+      'firstName': '',
+      'lastName': '',
+      'phone': _phoneController.text.trim(),
+      'dob': '',
+      'cccd': _cccdController.text.trim(),
+      'gender': '',
+      'address': '',
+      'email': '',
+      'password': _passwordController.text.trim(),
+      'isActive': false,
+      'role': 'temporaryUser',
+      'createdAt': DateTime.now().toIso8601String(),
+      'status': 'pending',
     };
 
     try {
@@ -150,11 +92,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
+  void dispose() {
+    _phoneController.dispose();
+    _cccdController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Create Account', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Create Account',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black87,
@@ -178,37 +129,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Fill in your details to get started.',
+                  'Enter phone, CCCD and password to get started.',
                   style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-
-                // Name Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _firstNameController,
-                        label: 'First Name',
-                        icon: Icons.person_outline_rounded,
-                        validator: (v) => v!.isEmpty ? 'Required' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _lastNameController,
-                        label: 'Last Name',
-                        icon: Icons.person_outline_rounded,
-                        validator: (v) => v!.isEmpty ? 'Required' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Phone
                 _buildTextField(
                   controller: _phoneController,
                   label: 'Phone Number',
@@ -227,88 +152,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Email
-                _buildTextField(
-                  controller: _emailController,
-                  label: 'Email Address',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Required';
-                    if (!_emailRegex.hasMatch(v.trim())) return 'Invalid email format';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // DOB and Gender Row
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: GestureDetector(
-                        onTap: () => _selectDate(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            border: Border.all(color: Colors.grey[300]!),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.calendar_today_rounded, color: primaryBlue, size: 20),
-                              const SizedBox(width: 12),
-                              Text(
-                                _selectedDate == null 
-                                    ? 'Date of Birth' 
-                                    : DateFormat('MMM dd, yyyy').format(_selectedDate!),
-                                style: TextStyle(
-                                  color: _selectedDate == null ? Colors.grey[600] : Colors.black87,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedGender,
-                            isExpanded: true,
-                            icon: Icon(Icons.keyboard_arrow_down_rounded, color: primaryBlue),
-                            items: _genders.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                _selectedGender = newValue!;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // CCCD
                 _buildTextField(
                   controller: _cccdController,
                   label: 'CCCD / ID Number',
@@ -327,26 +170,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Address
-                _buildTextField(
-                  controller: _addressController,
-                  label: 'Home Address',
-                  icon: Icons.home_outlined,
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline_rounded, color: primaryBlue),
+                    prefixIcon:
+                        Icon(Icons.lock_outline_rounded, color: primaryBlue),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey[600],
                       ),
                       onPressed: () {
@@ -385,10 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                
                 const SizedBox(height: 32),
-
-                // Submit Button
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
@@ -406,15 +238,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ? const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 3),
                           )
                         : const Text(
                             'Create Account',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1),
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1),
                           ),
                   ),
                 ),
-                
                 const SizedBox(height: 24),
               ],
             ),
@@ -424,7 +259,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Reusable TextField wrapper
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -459,8 +293,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-
-// ─── Registration Success Screen ─────────────────────────────────────────────
 
 class _RegistrationSuccessScreen extends StatelessWidget {
   const _RegistrationSuccessScreen();
@@ -510,7 +342,7 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Tài khoản của bạn đã được ghi nhận.\nVui lòng chờ xét duyệt từ nhân viên của chúng tôi.',
+                  'Tài khoản của bạn đã được ghi nhận.\nVui lòng chờ xét duyệt từ nhân viên của chúng tôi.',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -521,19 +353,22 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF8E1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF8C034).withOpacity(0.5)),
+                    border: Border.all(
+                        color: const Color(0xFFF8C034).withOpacity(0.5)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.access_time_rounded, color: Color(0xFFB8860B), size: 18),
+                      const Icon(Icons.access_time_rounded,
+                          color: Color(0xFFB8860B), size: 18),
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Thời gian xét duyệt: 1 - 3 ngày làm việc',
+                          'Th?i gian x�t duy?t: 1 - 3 ng�y l�m vi?c',
                           style: TextStyle(
                             fontSize: 13,
                             color: Color(0xFFB8860B),
@@ -551,7 +386,6 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                   height: 54,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navigate all the way back to root (LoginScreen)
                       Navigator.of(context).popUntil((route) => route.isFirst);
                     },
                     style: ElevatedButton.styleFrom(
@@ -565,7 +399,8 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                     ),
                     child: const Text(
                       'Back to Login',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                      style:
+                          TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -577,4 +412,3 @@ class _RegistrationSuccessScreen extends StatelessWidget {
     );
   }
 }
-

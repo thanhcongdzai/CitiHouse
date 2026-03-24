@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -10,12 +10,14 @@ class ApartmentApprovalDetailScreen extends StatefulWidget {
   final Apartment apartment;
   final User currentUser;
   final bool isMyJob;
+  final String? focusStepKey;
 
   const ApartmentApprovalDetailScreen({
     super.key,
     required this.apartment,
     required this.currentUser,
     required this.isMyJob,
+    this.focusStepKey,
   });
 
   @override
@@ -35,6 +37,12 @@ class _ApartmentApprovalDetailScreenState
   void initState() {
     super.initState();
     _currentApt = widget.apartment;
+  }
+
+  bool get _isScoped => widget.focusStepKey != null;
+
+  bool _canActOnStep(String stepKey) {
+    return widget.isMyJob && (!_isScoped || widget.focusStepKey == stepKey);
   }
 
   Map<String, dynamic> _buildApartmentPayload({
@@ -85,16 +93,23 @@ class _ApartmentApprovalDetailScreenState
     setState(() => _isProcessing = true);
     try {
       final v = _currentApt.verifications ?? {};
-      final img = v['image'] ?? {};
-      final leg = v['legal'] ?? {};
-      final oi = v['ownerIntent'] ?? {};
+      if (_isScoped) {
+        final stepKey = widget.focusStepKey!;
+        final stepMap = v[stepKey] ?? {};
+        stepMap['staffId'] = widget.currentUser.id;
+        v[stepKey] = stepMap;
+      } else {
+        final img = v['image'] ?? {};
+        final leg = v['legal'] ?? {};
+        final oi = v['ownerIntent'] ?? {};
 
-      img['staffId'] = widget.currentUser.id;
-      leg['staffId'] = widget.currentUser.id;
-      oi['staffId'] = widget.currentUser.id;
-      v['image'] = img;
-      v['legal'] = leg;
-      v['ownerIntent'] = oi;
+        img['staffId'] = widget.currentUser.id;
+        leg['staffId'] = widget.currentUser.id;
+        oi['staffId'] = widget.currentUser.id;
+        v['image'] = img;
+        v['legal'] = leg;
+        v['ownerIntent'] = oi;
+      }
 
       final updatedApt = _buildApartmentPayload(verifications: v);
 
@@ -146,7 +161,7 @@ class _ApartmentApprovalDetailScreenState
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
-          'Confirm cho đăng',
+          'Xác nhận cho đăng',
           style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
         ),
         content: const Text('Bạn có chắc chắn muốn duyệt không?'),
@@ -154,7 +169,7 @@ class _ApartmentApprovalDetailScreenState
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
-              'Cancel',
+              'Hủy',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -235,7 +250,7 @@ class _ApartmentApprovalDetailScreenState
                     Navigator.pop(ctx);
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Close'),
+                  child: const Text('Đóng'),
                 ),
               ],
             ),
@@ -268,12 +283,36 @@ class _ApartmentApprovalDetailScreenState
   }
 
   Future<void> _showConfirmStepDialog(String stepKey, String title) async {
+    if (_isScoped && widget.focusStepKey != stepKey) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ban khong co quyen duyet buoc nay.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (stepKey == 'image') {
+      final staffImage =
+          _currentApt.verifications?['image']?['staffImage']?.toString() ?? '';
+      if (staffImage.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Can upload staffImage truoc khi duyet hinh anh.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
-          'Confirm duyệt',
+          'Xác nhận duyệt',
           style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
         ),
         content: Text(
@@ -306,13 +345,23 @@ class _ApartmentApprovalDetailScreenState
       await _updateStepStatus(
         stepKey,
         'Approved',
-        successMessage: 'Approved $title!',
+        successMessage: 'Đã duyệt $title!',
       );
     }
   }
 
   Future<void> _showConfirmRejectStepDialog(
       String stepKey, String title) async {
+    if (_isScoped && widget.focusStepKey != stepKey) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ban khong co quyen tu choi buoc nay.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -328,7 +377,7 @@ class _ApartmentApprovalDetailScreenState
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
-              'Cancel',
+              'Hủy',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -341,7 +390,7 @@ class _ApartmentApprovalDetailScreenState
               ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Reject'),
+            child: const Text('Từ chối'),
           ),
         ],
       ),
@@ -351,7 +400,7 @@ class _ApartmentApprovalDetailScreenState
       await _updateStepStatus(
         stepKey,
         'Rejected',
-        successMessage: 'Rejected $title!',
+        successMessage: 'Đã từ chối $title!',
       );
     }
   }
@@ -361,6 +410,16 @@ class _ApartmentApprovalDetailScreenState
     String status, {
     required String successMessage,
   }) async {
+    if (_isScoped && widget.focusStepKey != stepKey) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ban khong co quyen xu ly buoc nay.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isProcessing = true);
     try {
       final v = _currentApt.verifications ?? {};
@@ -424,7 +483,7 @@ class _ApartmentApprovalDetailScreenState
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
-          'Confirm từ chối yêu cầu',
+          'Xác nhận từ chối yêu cầu',
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
         content: const Text(
@@ -434,7 +493,7 @@ class _ApartmentApprovalDetailScreenState
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
-              'Cancel',
+              'Hủy',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -447,7 +506,7 @@ class _ApartmentApprovalDetailScreenState
               ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Reject yêu cầu'),
+            child: const Text('Từ chối yêu cầu'),
           ),
         ],
       ),
@@ -522,7 +581,7 @@ class _ApartmentApprovalDetailScreenState
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Reject thành công',
+                      'Từ chối thành công',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -534,7 +593,7 @@ class _ApartmentApprovalDetailScreenState
                 ],
               ),
               content: const Text(
-                'Yêu cầu đã được chuyển sang trạng thái Rejected.',
+                'Yêu cầu đã bị từ chối.',
                 style: TextStyle(fontSize: 16),
               ),
               actions: [
@@ -550,7 +609,7 @@ class _ApartmentApprovalDetailScreenState
                     Navigator.pop(ctx);
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Close'),
+                  child: const Text('Đóng'),
                 ),
               ],
             ),
@@ -638,7 +697,7 @@ class _ApartmentApprovalDetailScreenState
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
         title: const Text(
-          'Chi Tiết Phê Approve',
+          'Chi Tiết Phê Duyệt',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -723,7 +782,7 @@ class _ApartmentApprovalDetailScreenState
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Tiến Trình Phê Approve',
+                  'Tiến Trình Phê Duyệt',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -732,7 +791,7 @@ class _ApartmentApprovalDetailScreenState
                 ),
                 const SizedBox(height: 16),
                 _buildApprovalStep(
-                  '1. Hinh Anh Thuc Te (Image)',
+                  '1. Hình ảnh thực tế (Image)',
                   imgMap,
                   Icons.image_rounded,
                   () => _showConfirmStepDialog('image', 'Hình Ảnh Thực Tế'),
@@ -744,10 +803,18 @@ class _ApartmentApprovalDetailScreenState
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            ApartmentImagesScreen(apartment: _currentApt),
+                        builder: (_) => ApartmentImagesScreen(
+                          apartment: _currentApt,
+                          canUploadStaffImage: _canActOnStep('image'),
+                        ),
                       ),
-                    );
+                    ).then((updatedApartment) {
+                      if (updatedApartment is Apartment && mounted) {
+                        setState(() {
+                          _currentApt = updatedApartment;
+                        });
+                      }
+                    });
                   },
                 ),
                 const SizedBox(height: 12),
@@ -799,7 +866,7 @@ class _ApartmentApprovalDetailScreenState
                   color: Colors.red,
                   shadowColor: Colors.red.withOpacity(0.35),
                   icon: Icons.cancel_rounded,
-                  label: 'Reject yêu cầu',
+                  label: 'Từ chối yêu cầu',
                   onPressed: _showConfirmRejectRequestDialog,
                 )
               : approvedAll
@@ -807,7 +874,7 @@ class _ApartmentApprovalDetailScreenState
                       color: Colors.green[600]!,
                       shadowColor: Colors.green.withOpacity(0.5),
                       icon: Icons.check_circle_rounded,
-                      label: 'Approve và Cho Đăng',
+                      label: 'Duyệt và Cho Đăng',
                       onPressed: _showConfirmPublishDialog,
                     )
                   : null,
@@ -892,9 +959,9 @@ class _ApartmentApprovalDetailScreenState
             : primaryBlue;
     final String timeSuffix = _formatUpdatedAt(statusMap['updatedAt']);
     final String statusText = isApproved
-        ? 'Approved$timeSuffix'
+        ? 'Đã duyệt$timeSuffix'
         : isRejected
-            ? 'Rejected$timeSuffix'
+            ? 'Đã từ chối$timeSuffix'
             : 'Chưa được duyệt';
     final Color statusColor = isApproved
         ? Colors.green[600]!
@@ -977,7 +1044,7 @@ class _ApartmentApprovalDetailScreenState
                                 ),
                               ),
                               child: const Text(
-                                'Reject',
+                                'Từ chối',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -997,7 +1064,7 @@ class _ApartmentApprovalDetailScreenState
                                 ),
                               ),
                               child: const Text(
-                                'Approve',
+                                'Duyệt',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -1009,4 +1076,3 @@ class _ApartmentApprovalDetailScreenState
     );
   }
 }
-

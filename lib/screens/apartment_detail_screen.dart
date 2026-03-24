@@ -8,7 +8,8 @@ class ApartmentDetailScreen extends StatefulWidget {
   final Apartment apartment;
   final User? currentUser;
 
-  const ApartmentDetailScreen({super.key, required this.apartment, this.currentUser});
+  const ApartmentDetailScreen(
+      {super.key, required this.apartment, this.currentUser});
 
   @override
   State<ApartmentDetailScreen> createState() => _ApartmentDetailScreenState();
@@ -37,10 +38,13 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool canRequestViewing =
+        widget.currentUser?.status.trim().toLowerCase() == 'approved';
     final List<String> apiImages = widget.apartment.imageUrl
         .split(',')
         .map((e) => e.trim())
-        .where((e) => e.isNotEmpty && e.startsWith('http') && e != 'https://image1.com')
+        .where((e) =>
+            e.isNotEmpty && e.startsWith('http') && e != 'https://image1.com')
         .toList();
 
     final List<String> images = apiImages.isNotEmpty
@@ -134,7 +138,8 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       decoration: BoxDecoration(
                         color: primaryBlue.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.5)),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.5)),
                       ),
                       child: Text(
                         '${_currentImageIndex + 1}/${images.length}',
@@ -302,12 +307,21 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                           spacing: 10,
                           runSpacing: 10,
                           children: [
-                            _buildHighlightChip(Icons.qr_code_rounded,
-                                widget.apartment.displayCode.isNotEmpty ? widget.apartment.displayCode : 'N/A'),
-                            _buildHighlightChip(Icons.location_on_rounded,
-                                widget.apartment.ward.isNotEmpty ? widget.apartment.ward : 'Unknown area'),
-                            _buildHighlightChip(Icons.business_rounded,
-                                widget.apartment.project.isNotEmpty ? widget.apartment.project : 'No project'),
+                            _buildHighlightChip(
+                                Icons.qr_code_rounded,
+                                widget.apartment.displayCode.isNotEmpty
+                                    ? widget.apartment.displayCode
+                                    : 'N/A'),
+                            _buildHighlightChip(
+                                Icons.location_on_rounded,
+                                widget.apartment.ward.isNotEmpty
+                                    ? widget.apartment.ward
+                                    : 'Unknown area'),
+                            _buildHighlightChip(
+                                Icons.business_rounded,
+                                widget.apartment.project.isNotEmpty
+                                    ? widget.apartment.project
+                                    : 'No project'),
                           ],
                         ),
                       ],
@@ -323,7 +337,10 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [primaryBlue.withOpacity(0.96), const Color(0xFF3E79F7)],
+                        colors: [
+                          primaryBlue.withOpacity(0.96),
+                          const Color(0xFF3E79F7)
+                        ],
                       ),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
@@ -356,9 +373,12 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                           spacing: 10,
                           runSpacing: 10,
                           children: [
-                            _buildVerificationPill('Image', _verificationStatus('image')),
-                            _buildVerificationPill('Legal', _verificationStatus('legal')),
-                            _buildVerificationPill('Owner Intent', _verificationStatus('ownerIntent')),
+                            _buildVerificationPill(
+                                'Image', _verificationStatus('image')),
+                            _buildVerificationPill(
+                                'Legal', _verificationStatus('legal')),
+                            _buildVerificationPill('Owner Intent',
+                                _verificationStatus('ownerIntent')),
                           ],
                         ),
                       ],
@@ -591,29 +611,42 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BookAppointmentScreen(
-                          apartment: widget.apartment,
-                          currentUser: widget.currentUser,
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: canRequestViewing
+                      ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookAppointmentScreen(
+                                apartment: widget.apartment,
+                                currentUser: widget.currentUser,
+                              ),
+                            ),
+                          );
+                        }
+                      : () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Tài khoản chưa được Approved nên không thể yêu cầu xem nhà',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryBlue,
+                    backgroundColor:
+                        canRequestViewing ? primaryBlue : Colors.grey,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     elevation: 6,
-                    shadowColor: primaryBlue.withOpacity(0.45),
+                    shadowColor: (canRequestViewing ? primaryBlue : Colors.grey)
+                        .withOpacity(0.45),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: const Text(
-                    'Contact Owner',
+                    'Yêu cầu xem nhà',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

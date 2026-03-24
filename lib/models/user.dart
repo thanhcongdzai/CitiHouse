@@ -10,6 +10,7 @@ class User {
   final String? bankAccount;
   final bool isActive;
   final String role;
+  final String status;
   final String email;
   final String? image;
 
@@ -25,11 +26,13 @@ class User {
     this.bankAccount,
     required this.isActive,
     required this.role,
+    required this.status,
     required this.email,
     this.image,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final rawRole = json['role'];
     return User(
       id: json['id']?.toString() ?? '',
       firstName: json['firstName'] ?? '',
@@ -41,7 +44,10 @@ class User {
       address: json['address'] ?? '',
       bankAccount: json['bankAccount'],
       isActive: json['isActive'] == true || json['isActive'] == 'true' || json['isActive'] == 1,
-      role: json['role'] ?? 'User',
+      role: rawRole?.toString().trim().isNotEmpty == true
+          ? rawRole.toString().trim()
+          : 'User',
+      status: json['status']?.toString() ?? '',
       email: json['email'] ?? '',
       image: json['image'],
     );
@@ -60,6 +66,7 @@ class User {
       'bankAccount': bankAccount,
       'isActive': isActive,
       'role': role,
+      'status': status,
       'email': email,
       'image': image,
     };
