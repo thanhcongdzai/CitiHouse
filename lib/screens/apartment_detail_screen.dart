@@ -627,7 +627,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'Tài khoản chưa được Approved nên không thể yêu cầu xem nhà',
+                                'Tài khoản chưa được duyệt nên không thể yêu cầu xem nhà',
                               ),
                               backgroundColor: Colors.red,
                             ),
@@ -753,11 +753,11 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
           children: [
             Expanded(
                 child: _buildGridItem(
-                    'Project', widget.apartment.project, Icons.apartment)),
+                    'Dự án', widget.apartment.project, Icons.apartment)),
             const SizedBox(width: 16),
             Expanded(
                 child: _buildGridItem(
-                    'Building', widget.apartment.building, Icons.domain)),
+                    'Tòa nhà', widget.apartment.building, Icons.domain)),
           ],
         ),
         const SizedBox(height: 16),
@@ -765,10 +765,10 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
           children: [
             Expanded(
                 child: _buildGridItem(
-                    'Floor', widget.apartment.floor.toString(), Icons.layers)),
+                    'Tầng', widget.apartment.floor.toString(), Icons.layers)),
             const SizedBox(width: 16),
             Expanded(
-                child: _buildGridItem('Apt Number',
+                child: _buildGridItem('Mã căn',
                     widget.apartment.displayCode, Icons.door_front_door)),
           ],
         ),
@@ -828,12 +828,12 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   String _formatPrice(int price) {
     if (price >= 1000000000) {
       double billions = price / 1000000000;
-      return '${billions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} Billion VND';
+      return '${billions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} tỷ VNĐ';
     } else if (price >= 1000000) {
       double millions = price / 1000000;
-      return '${millions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} Million VND';
+      return '${millions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} triệu VNĐ';
     }
-    return '${price.toString()} VND';
+    return '${price.toString()} VNĐ';
   }
 
   void _showFullScreenImage(

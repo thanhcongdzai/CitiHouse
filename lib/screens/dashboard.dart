@@ -1256,12 +1256,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _formatPrice(int price) {
     if (price >= 1000000000) {
       double billions = price / 1000000000;
-      return '${billions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} Billion VND';
+      return '${billions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} tỷ VNĐ';
     } else if (price >= 1000000) {
       double millions = price / 1000000;
-      return '${millions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} Million VND';
+      return '${millions.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} triệu VNĐ';
     }
-    return '${price.toString()} VND';
+    return '${price.toString()} VNĐ';
   }
 }
 

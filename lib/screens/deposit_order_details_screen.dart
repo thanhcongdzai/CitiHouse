@@ -59,7 +59,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm duyệt cọc'),
+        title: const Text('Xác nhận duyệt cọc'),
         content: const Text('Bạn có chắc chắn muốn duyệt đơn cọc này? Trạng thái sẽ chuyển thành "Pending Payment".'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
@@ -103,7 +103,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
       if (response.statusCode == 200) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Approved đơn cọc thành công!'), backgroundColor: Colors.green),
+            const SnackBar(content: Text('Đã duyệt đơn cọc thành công!'), backgroundColor: Colors.green),
           );
           widget.onActionCompleted();
           Navigator.pop(context);
@@ -330,7 +330,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                       const SizedBox(height: 20),
                       
                       const Text(
-                        'General Information',
+                        'Thông tin chính',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -340,10 +340,10 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                       const SizedBox(height: 16),
                       
                       _buildDetailRow('Số tiền cọc:', _formatCurrency(widget.deposit['depositAmount']), isHighlight: true),
-                      _buildDetailRow('Created at:', _formatDate(widget.deposit['createdAt']?.toString())),
+                      _buildDetailRow('Ngày tạo:', _formatDate(widget.deposit['createdAt']?.toString())),
                       _buildDetailRow('Hạn chót thanh toán:', _formatDate(widget.deposit['expiredAt']?.toString())),
-                      _buildDetailRow('Notes:', widget.deposit['notes']?.toString() ?? 'None'),
-                      _buildDetailRow('Status:', status.toString().toUpperCase()),
+                      _buildDetailRow('Ghi chú:', widget.deposit['notes']?.toString() ?? 'None'),
+                      _buildDetailRow('Trạng thái:', status.toString()),
                     ],
                   ),
                 ),
@@ -400,7 +400,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Consultant', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                      const Text('Người phụ trách', style: TextStyle(color: Colors.grey, fontSize: 13)),
                                       Text(widget.staffName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                     ],
                                   ),
@@ -445,7 +445,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Depositing Customer', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                      const Text('Khách hàng đặt cọc', style: TextStyle(color: Colors.grey, fontSize: 13)),
                                       Text(widget.buyerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                     ],
                                   ),
@@ -507,7 +507,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                             child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
                         : const Text(
-                            'Approve Đơn Cọc Này',
+                            'Duyệt Đơn Cọc Này',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

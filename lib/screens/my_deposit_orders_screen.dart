@@ -42,7 +42,8 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
 
       if (res.statusCode != 200) throw Exception('Lỗi server: ${res.statusCode}');
 
-      final orders = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;
+      final allOrders = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;
+      final activeOrders = allOrders.where((o) => o['status'] != 'Da thanh toan').toList();
 
       // Fetch apartment names for the list view
       final aptRes = await http.get(ApiConfig.uri('/api/apartments/'));
@@ -55,7 +56,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
       }
 
       setState(() {
-        _orders = orders;
+        _orders = activeOrders;
         _apartmentNames = aptMap;
         _isLoading = false;
       });
@@ -97,7 +98,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
   String _statusLabel(String? status) {
     switch (status) {
       case 'cho duyet coc':
-        return 'Chờ xác nhận đặt cọc';
+        return 'Chờ xác nhận duyệt cọc';
       case 'Cho thanh toan':
         return 'Chờ thanh toán đặt cọc';
       case 'Da thanh toan':

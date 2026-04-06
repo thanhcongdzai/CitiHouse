@@ -5,6 +5,7 @@ import '../config/api_config.dart';
 import '../models/apartment.dart';
 import '../models/user.dart';
 import 'apartment_images_screen.dart';
+import 'owner_detail_screen.dart';
 
 class ApartmentApprovalDetailScreen extends StatefulWidget {
   final Apartment apartment;
@@ -71,6 +72,7 @@ class _ApartmentApprovalDetailScreenState
         'apartmentNumber': _currentApt.apartmentNumber,
       },
       'verifications': verifications,
+      if (_currentApt.owner != null) 'owner': _currentApt.owner,
     };
   }
 
@@ -839,6 +841,18 @@ class _ApartmentApprovalDetailScreenState
                     'ownerIntent',
                     'Xác Nhận Chủ Nhà',
                   ),
+                  onTap: () {
+                    final ownerMap = _currentApt.owner;
+                    final ownerData = ownerMap != null ? [ownerMap] : <Map<String, dynamic>>[];
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OwnerDetailScreen(
+                          ownerList: ownerData,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 100),
               ],

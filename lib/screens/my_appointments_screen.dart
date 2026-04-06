@@ -62,8 +62,11 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'yeu cau xem': return primaryBlue;
+      case 'da xac nhan lich':
       case 'da xac nhan': return Colors.green;
+      case 'dang xem': return Colors.orange;
       case 'hoan thanh': return Colors.teal;
+      case 'da yeu cau coc': return Colors.purple;
       case 'huy': return Colors.red;
       default: return Colors.grey;
     }
@@ -72,10 +75,26 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
   IconData _statusIcon(String status) {
     switch (status.toLowerCase()) {
       case 'yeu cau xem': return Icons.schedule_rounded;
+      case 'da xac nhan lich':
       case 'da xac nhan': return Icons.check_circle_outline_rounded;
+      case 'dang xem': return Icons.visibility_rounded;
       case 'hoan thanh': return Icons.task_alt_rounded;
+      case 'da yeu cau coc': return Icons.monetization_on_rounded;
       case 'huy': return Icons.cancel_outlined;
       default: return Icons.info_outline;
+    }
+  }
+
+  String _formatStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'yeu cau xem': return 'Yêu cầu xem';
+      case 'da xac nhan lich':
+      case 'da xac nhan': return 'Đã xác nhận lịch';
+      case 'dang xem': return 'Đang xem';
+      case 'hoan thanh': return 'Hoàn thành';
+      case 'da yeu cau coc': return 'Đã yêu cầu cọc';
+      case 'huy': return 'Huỷ';
+      default: return status;
     }
   }
 
@@ -84,7 +103,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
-        title: const Text('My Appointments', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Lịch hẹn của tôi', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -130,9 +149,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
             child: const Icon(Icons.calendar_today_outlined, size: 44, color: primaryBlue),
           ),
           const SizedBox(height: 20),
-          const Text('No Appointments Yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const Text('Chưa có lịch hẹn', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
           const SizedBox(height: 8),
-          Text('Book a viewing from a property listing.', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+          Text('Đặt lịch hẹn xem từ danh sách bất động sản.', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
         ],
       ),
     );
@@ -174,7 +193,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                 Icon(_statusIcon(status), color: statusColor, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  status,
+                  _formatStatus(status),
                   style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 14),
                 ),
               ],

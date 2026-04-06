@@ -17,10 +17,88 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
   static const primaryBlue = Color.fromRGBO(35, 97, 219, 1);
   
   bool _isLoading = true;
+  bool _isPaymentProcessing = false;
   String? _error;
   Map<String, dynamic>? _apartmentInfo;
   Map<String, dynamic>? _staffInfo;
   int _currentImageIndex = 0;
+  late Map<String, dynamic> _order;
+
+  @override
+  void initState() {
+    super.initState();
+    _order = Map<String, dynamic>.from(widget.order);
+    _fetchDetails();
+  }
+
+  Future<void> _processPayment() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Xác nhận thanh toán',
+          style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+        ),
+        content: const Text('Bạn có chắc chắn muốn thanh toán đơn cọc này?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isPaymentProcessing = true);
+
+    try {
+      final orderId = _order['id'];
+      final updatedData = Map<String, dynamic>.from(_order);
+      updatedData['status'] = 'Da thanh toan';
+
+      final response = await http.put(
+        ApiConfig.uri('/api/deposit-orders/$orderId/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updatedData),
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            _order['status'] = 'Da thanh toan';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Thanh toán thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPaymentProcessing = false);
+    }
+  }
 
   void _showFullScreenImage(BuildContext context, List<String> imageUrls, int initialIndex) {
     Navigator.push(
@@ -34,11 +112,7 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchDetails();
-  }
+  // initState is above with _order initialization
 
   Future<void> _fetchDetails() async {
     setState(() {
@@ -77,7 +151,7 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
 
   String _formatCurrency(dynamic amount) {
     if (amount == null) return '0 đ';
-    return NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(amount);
+    return NumberFormat.currency(locale: 'vi_VN', symbol: 'VNĐ').format(amount);
   }
 
   String _formatDate(String? iso) {
@@ -105,11 +179,11 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
   String _statusLabel(String? status) {
     switch (status) {
       case 'cho duyet coc':
-        return 'Pending cọc';
+        return 'Chờ duyệt cọc';
       case 'Cho thanh toan':
-        return 'Pending Payment';
+        return 'Chờ thanh toán';
       case 'Da thanh toan':
-        return 'Paid';
+        return 'Đã thanh toán';
       default:
         return status ?? 'Unknown';
     }
@@ -200,7 +274,7 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final order = widget.order;
+    final order = _order;
     final createdAt = order['createdAt']?.toString();
     final expiredAt = order['expiredAt']?.toString();
     final status = order['status']?.toString();
@@ -421,7 +495,7 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
                     ],
                   ),
                 ),
-      bottomSheet: _isLoading || _error != null ? null : Container(
+      bottomSheet: _isLoading || _error != null || status != 'Cho thanh toan' ? null : Container(
         width: double.infinity,
         padding: EdgeInsets.only(
           left: 16,
@@ -440,9 +514,7 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
           ],
         ),
         child: ElevatedButton(
-          onPressed: () {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tính năng thanh toán đang được cập nhật!')));
-          },
+          onPressed: _isPaymentProcessing ? null : _processPayment,
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryBlue,
             foregroundColor: Colors.white,
@@ -452,13 +524,19 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
             ),
             elevation: 0,
           ),
-          child: const Text(
-            'Thanh toán',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          child: _isPaymentProcessing
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                )
+              : const Text(
+                  'Thanh toán',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
         ),
       ),
     );

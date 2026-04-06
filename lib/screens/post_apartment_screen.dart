@@ -1,9 +1,10 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import 'select_apartment_images_screen.dart';
@@ -27,6 +28,11 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
   final _subjectCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
+
+  // Owner controllers
+  final _ownerNameCtrl = TextEditingController();
+  final _ownerPhoneCtrl = TextEditingController();
+  List<File> _ownerCCCDImages = [];
 
   // Project data
   List<Map<String, dynamic>> _allProjects = [];
@@ -68,6 +74,9 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     _subjectCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
+    _ownerNameCtrl.dispose();
+    _ownerPhoneCtrl.dispose();
+
     super.dispose();
   }
 
@@ -335,7 +344,10 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       },
       "displayCode": _generateDisplayCode(),
       "houseStatus": "Pending",
-      "owner": {},
+      "owner": {
+        "ownerName": _ownerNameCtrl.text.trim(),
+        "ownerPhone": _ownerPhoneCtrl.text.trim(),
+      },
       "verifications": {
         "image": {"status": "Pending", "staffId": null, "updatedAt": ""},
         "legal": {"status": "Pending", "staffId": null, "updatedAt": ""},
@@ -345,7 +357,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     };
 
     try {
-      final bool hasImages = _coverImage != null || _subImages.isNotEmpty;
+      final bool hasImages = _coverImage != null || _subImages.isNotEmpty || _ownerCCCDImages.isNotEmpty;
       http.Response resp;
 
       if (hasImages) {
@@ -374,6 +386,14 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           ));
         }
 
+        // Add owner CCCD images
+        for (var img in _ownerCCCDImages) {
+          request.files.add(await http.MultipartFile.fromPath(
+            'ownerCCCDs',
+            img.path,
+          ));
+        }
+
         final streamedResp = await request.send();
         resp = await http.Response.fromStream(streamedResp);
       } else {
@@ -396,7 +416,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           if (!mounted) return;
           setState(() => _isSubmitting = false);
           _showError(
-              'Dang nha thanh cong nhung khong lay duoc du lieu de cap nhat occupiedBy.');
+              'Đăng nhà thành công nhưng không thể cập nhật thông tin căn hộ đã được đăng');
           return;
         }
 
@@ -629,7 +649,34 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     _buildLocationPreview(),
                   ],
                   const SizedBox(height: 28),
-                  _buildSectionHeader('Hình ảnh', Icons.photo_camera_rounded),
+                  _buildSectionHeader(
+                      'Thông tin chủ sở hữu', Icons.person_outline_rounded),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    controller: _ownerNameCtrl,
+                    label: 'Tên chủ sở hữu *',
+                    hint: 'Nhập tên chủ sở hữu',
+                    icon: Icons.person_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Vui lòng nhập tên chủ sở hữu'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _ownerPhoneCtrl,
+                    label: 'Số điện thoại *',
+                    hint: 'Nhập số điện thoại chủ sở hữu',
+                    icon: Icons.phone_rounded,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Vui lòng nhập số điện thoại'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildCCCDImagePicker(),
+                  const SizedBox(height: 28),
+                  _buildSectionHeader('Hình ảnh', Icons.photo_camera_rounded),
                   const SizedBox(height: 12),
                   _buildImageUploadButton(),
                   const SizedBox(height: 36),
@@ -849,6 +896,174 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   fontSize: 13,
                   color: Colors.black87),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickCCCDImages() async {
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage();
+    if (pickedFiles.isNotEmpty) {
+      setState(() {
+        _ownerCCCDImages.addAll(pickedFiles.map((f) => File(f.path)));
+      });
+    }
+  }
+
+  Widget _buildCCCDImagePicker() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _ownerCCCDImages.isNotEmpty
+              ? primaryBlue.withValues(alpha: 0.3)
+              : Colors.grey[300]!,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primaryBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.badge_rounded,
+                    color: primaryBlue, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ảnh CCCD chủ sở hữu *',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _ownerCCCDImages.isEmpty
+                          ? 'Chọn ảnh mặt trước & mặt sau CCCD'
+                          : '${_ownerCCCDImages.length} ảnh đã chọn',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _ownerCCCDImages.isNotEmpty
+                            ? primaryBlue
+                            : Colors.grey[500],
+                        fontWeight: _ownerCCCDImages.isNotEmpty
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              ..._ownerCCCDImages.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final img = entry.value;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        img,
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _ownerCCCDImages.removeAt(idx);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red[600],
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+              // Add button
+              GestureDetector(
+                onTap: _pickCCCDImages,
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: primaryBlue.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: primaryBlue.withValues(alpha: 0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_a_photo_rounded,
+                          color: primaryBlue.withValues(alpha: 0.7), size: 28),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Thêm ảnh',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: primaryBlue.withValues(alpha: 0.7),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

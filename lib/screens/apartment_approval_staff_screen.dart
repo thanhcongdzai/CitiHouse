@@ -100,13 +100,13 @@ class _ApprovalTaskStaffScreenState extends State<ApprovalTaskStaffScreen> {
         });
       } else {
         setState(() {
-          _error = 'Server error: ${response.statusCode}';
+          _error = 'Lỗi server: ${response.statusCode}';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Connection error: $e';
+        _error = 'Lỗi kết nối: $e';
         _isLoading = false;
       });
     }
@@ -331,7 +331,7 @@ class _ApprovalTaskStaffScreenState extends State<ApprovalTaskStaffScreen> {
                       ElevatedButton.icon(
                         onPressed: _fetchPendingApartments,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        label: const Text('Thử lại'),
                       ),
                     ],
                   ),

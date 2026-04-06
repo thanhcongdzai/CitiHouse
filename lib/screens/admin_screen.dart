@@ -96,7 +96,7 @@ class _AdminScreenState extends State<AdminScreen> {
         ].join(' | ');
         if (mounted) {
           setState(() {
-            _error = 'Loi tai du lieu: $codes';
+            _error = 'Lỗi tải dữ liệu: $codes';
             _isLoading = false;
           });
         }
@@ -104,7 +104,7 @@ class _AdminScreenState extends State<AdminScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Khong the ket noi may chu: $e';
+          _error = 'Không thể kết nối máy chủ: $e';
           _isLoading = false;
         });
       }
@@ -348,12 +348,12 @@ class _AdminScreenState extends State<AdminScreen> {
                       child: DropdownButton<int>(
                         value: _selectedMonth,
                         isExpanded: true,
-                        hint: const Text('All months',
+                        hint: const Text('Tất cả các tháng',
                             style: TextStyle(fontSize: 14)),
                         items: [
                           const DropdownMenuItem(
                               value: 0,
-                              child: Text('All months',
+                              child: Text('Tất cả các tháng',
                                   style: TextStyle(fontSize: 14))),
                           ...List.generate(12, (index) {
                             return DropdownMenuItem(
@@ -390,12 +390,12 @@ class _AdminScreenState extends State<AdminScreen> {
                         items: [
                           const DropdownMenuItem(
                               value: 0,
-                              child: Text('All years',
+                              child: Text('Tất cả các năm',
                                   style: TextStyle(fontSize: 14))),
                           ...years.map((y) {
                             return DropdownMenuItem(
                               value: y,
-                              child: Text('Year $y',
+                              child: Text('Năm $y',
                                   style: const TextStyle(fontSize: 14)),
                             );
                           }),
@@ -423,11 +423,11 @@ class _AdminScreenState extends State<AdminScreen> {
       spacing: 12,
       runSpacing: 12,
       children: [
-        _buildStatCard('Viewing Request', _countYeuCauXem, Colors.orange),
-        _buildStatCard('Contacting', _countDangLienHe, Colors.amber),
+        _buildStatCard('Yêu cầu xem', _countYeuCauXem, Colors.orange),
+        _buildStatCard('Đang liên hệ', _countDangLienHe, Colors.amber),
         _buildStatCard('Đã xác nhận', _countDaXacNhanLich, Colors.blue),
-        _buildStatCard('Viewing', _countDangXem, Colors.purple),
-        _buildStatCard('Completed', _countHoanThanh, Colors.green),
+        _buildStatCard('Đang xem', _countDangXem, Colors.purple),
+        _buildStatCard('Hoàn thành', _countHoanThanh, Colors.green),
       ],
     );
   }
@@ -496,7 +496,7 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
         child: const Center(
           child: Text(
-            'None dữ liệu trong khoảng thời gian này',
+            'Không có dữ liệu trong khoảng thời gian này',
             style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
         ),
@@ -520,7 +520,7 @@ class _AdminScreenState extends State<AdminScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Status Chart',
+            'Biểu đồ trạng thái',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -612,8 +612,8 @@ class _AdminScreenState extends State<AdminScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildLegendItem(Colors.orange, 'Viewing Request'),
-            _buildLegendItem(Colors.amber, 'Contacting'),
+            _buildLegendItem(Colors.orange, 'Yêu cầu xem'),
+            _buildLegendItem(Colors.amber, 'Đang liên hệ'),
           ],
         ),
         const SizedBox(height: 8),
@@ -621,14 +621,14 @@ class _AdminScreenState extends State<AdminScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildLegendItem(Colors.blue, 'Đã xác nhận'),
-            _buildLegendItem(Colors.purple, 'Viewing'),
+            _buildLegendItem(Colors.purple, 'Đang xem'),
           ],
         ),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLegendItem(Colors.green, 'Completed'),
+            _buildLegendItem(Colors.green, 'Đã hoàn thành'),
           ],
         ),
       ],
@@ -802,15 +802,15 @@ class _AdminScreenState extends State<AdminScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildLegendItem(Colors.orange, 'Deposit Requested'),
-                  _buildLegendItem(Colors.green, 'Paid'),
+                  _buildLegendItem(Colors.orange, 'Đã yêu cầu cọc'),
+                  _buildLegendItem(Colors.green, 'Đã thanh toán'),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.blue, 'Pending Payment'),
+                  _buildLegendItem(Colors.blue, 'Chờ thanh toán'),
                 ],
               ),
             ],

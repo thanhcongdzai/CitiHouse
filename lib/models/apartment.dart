@@ -16,6 +16,8 @@ class Apartment {
   final String houseStatus;
   final String finalApprove;
   final Map<String, dynamic>? verifications;
+  final String? postedBy;
+  final Map<String, dynamic>? owner;
 
   Apartment({
     required this.id,
@@ -35,6 +37,8 @@ class Apartment {
     required this.houseStatus,
     this.finalApprove = '',
     this.verifications,
+    this.postedBy,
+    this.owner,
   });
 
   static String _parseImageUrl(dynamic value) {
@@ -86,6 +90,10 @@ class Apartment {
       houseStatus: json['houseStatus'] as String? ?? '',
       finalApprove: json['finalApprove']?.toString() ?? '',
       verifications: json['verifications'] as Map<String, dynamic>?,
+      postedBy: json['postedBy']?.toString(),
+      owner: json['owner'] is Map
+          ? Map<String, dynamic>.from(json['owner'] as Map)
+          : null,
     );
   }
 }
