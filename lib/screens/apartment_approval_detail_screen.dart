@@ -123,7 +123,7 @@ class _ApartmentApprovalDetailScreenState
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Nhân việc thành công!'),
+              content: const Text('Nhận việc thành công!'),
               backgroundColor: Colors.green[600],
             ),
           );
@@ -286,7 +286,7 @@ class _ApartmentApprovalDetailScreenState
     if (_isScoped && widget.focusStepKey != stepKey) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ban khong co quyen duyet buoc nay.'),
+          content: Text('Bạn không có quyền duyệt bước này.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -299,7 +299,7 @@ class _ApartmentApprovalDetailScreenState
       if (staffImage.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Can upload staffImage truoc khi duyet hinh anh.'),
+            content: Text('Cần upload hình ảnh thực tế trước khi duyệt.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -322,7 +322,7 @@ class _ApartmentApprovalDetailScreenState
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
-              'Huy',
+              'Hủy',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -355,7 +355,7 @@ class _ApartmentApprovalDetailScreenState
     if (_isScoped && widget.focusStepKey != stepKey) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ban khong co quyen tu choi buoc nay.'),
+          content: Text('Bạn không có quyền từ chối bước này.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -413,7 +413,7 @@ class _ApartmentApprovalDetailScreenState
     if (_isScoped && widget.focusStepKey != stepKey) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ban khong co quyen xu ly buoc nay.'),
+          content: Text('Bạn không có quyền xử lý bước này.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -541,7 +541,7 @@ class _ApartmentApprovalDetailScreenState
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                  'Da tu choi yeu cau nhung khong tim thay projectId de clear occupiedBy.',
+                  'Đã từ chối yêu cầu nhưng không tìm thấy projectId để clear occupiedBy.',
                 ),
                 backgroundColor: Colors.orange,
               ),
@@ -557,7 +557,7 @@ class _ApartmentApprovalDetailScreenState
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'Da tu choi yeu cau nhung clear occupiedBy that bai: $e',
+                  'Đã từ chối yêu cầu nhưng clear occupiedBy thất bại: $e',
                 ),
                 backgroundColor: Colors.orange,
               ),

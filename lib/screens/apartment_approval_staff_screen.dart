@@ -25,26 +25,26 @@ class ApprovalStepConfig {
 
 const imageApprovalConfig = ApprovalStepConfig(
   stepKey: 'image',
-  screenTitle: 'Duyet Hinh Anh',
-  emptyAvailableMessage: 'Khong co bai dang nao cho duyet hinh anh',
-  emptyMyJobsMessage: 'Ban chua nhan viec duyet hinh anh nao',
-  approvalLabel: 'duyet hinh anh',
+  screenTitle: 'Duyệt hình ảnh',
+  emptyAvailableMessage: 'Không có bài đăng nào cần duyệt hình ảnh',
+  emptyMyJobsMessage: 'Bạn chưa nhận việc duyệt hình ảnh nào',
+  approvalLabel: 'duyệt hình ảnh',
 );
 
 const legalApprovalConfig = ApprovalStepConfig(
   stepKey: 'legal',
-  screenTitle: 'Duyet Phap Ly',
-  emptyAvailableMessage: 'Khong co bai dang nao cho duyet phap ly',
-  emptyMyJobsMessage: 'Ban chua nhan viec duyet phap ly nao',
-  approvalLabel: 'duyet phap ly',
+  screenTitle: 'Duyệt pháp lý',
+  emptyAvailableMessage: 'Không có bài đăng nào cần duyệt pháp lý',
+  emptyMyJobsMessage: 'Bạn chưa nhận việc duyệt pháp lý nào',
+  approvalLabel: 'Duyệt pháp lý',
 );
 
 const ownerApprovalConfig = ApprovalStepConfig(
   stepKey: 'ownerIntent',
-  screenTitle: 'Xac Nhan Chu Nha',
-  emptyAvailableMessage: 'Khong co bai dang nao cho xac nhan chu nha',
-  emptyMyJobsMessage: 'Ban chua nhan viec xac nhan chu nha nao',
-  approvalLabel: 'xac nhan chu nha',
+  screenTitle: 'Xác nhận chủ nhà',
+  emptyAvailableMessage: 'Không có bài đăng nào cần xác nhận chủ nhà',
+  emptyMyJobsMessage: 'Bạn chưa nhận việc xác nhận chủ nhà nào',
+  approvalLabel: 'Xác nhận chủ nhà',
 );
 
 class ApprovalTaskStaffScreen extends StatefulWidget {
@@ -234,31 +234,31 @@ class _ApprovalTaskStaffScreenState extends State<ApprovalTaskStaffScreen> {
   String _resolveAppBarTitle() {
     if (_showCompletedJobs) return 'Finished Jobs';
     if (_showOnlyMyJobs) return 'Công việc của tôi';
-    return _isScoped ? _stepConfig!.screenTitle : 'Approve Bai Dang (Can Nhan)';
+    return _isScoped ? _stepConfig!.screenTitle : 'Duyệt bài đăng';
   }
 
   String _resolveEmptyMessage() {
     if (_showCompletedJobs) {
       return _isScoped
-          ? 'Ban chua hoan thanh cong viec nao'
-          : 'Ban chua duyet xong cong viec nao';
+          ? 'Bạn chưa hoàn thành công việc nào'
+          : 'Bạn chưa duyệt xong công việc nào';
     }
     if (_showOnlyMyJobs) {
       return _isScoped
           ? _stepConfig!.emptyMyJobsMessage
-          : 'Ban chua nhan viec duyet nao';
+          : 'Bạn chưa nhận việc duyệt nào';
     }
     return _isScoped
         ? _stepConfig!.emptyAvailableMessage
-        : 'Khong co bai dang nao can nhan';
+        : 'Không có bài đăng nào cần duyệt';
   }
 
   String _resolveStatusLabel() {
-    if (_showCompletedJobs) return 'Da hoan thanh';
+    if (_showCompletedJobs) return 'Đã hoàn thành';
     if (_showOnlyMyJobs) {
-      return 'Accepted ${_stepConfig?.approvalLabel ?? 'duyet'}';
+      return 'Chấp nhận ${_stepConfig?.approvalLabel ?? 'duyệt'}';
     }
-    return 'Chua co nguoi nhan';
+    return 'Chưa có người nhận';
   }
 
   @override

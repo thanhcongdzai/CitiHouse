@@ -368,7 +368,7 @@ class _RegistrationSuccessScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Th?i gian x�t duy?t: 1 - 3 ng�y l�m vi?c',
+                          'Thời gian xét duyệt có thể mất từ 1-3 ngày làm việc.',
                           style: TextStyle(
                             fontSize: 13,
                             color: Color(0xFFB8860B),

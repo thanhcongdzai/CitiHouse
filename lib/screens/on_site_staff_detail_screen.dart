@@ -31,6 +31,9 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
   bool _isUploadingCompleteImage = false;
   DateTime? _selectedAppointmentDateTime;
 
+  XFile? _localViewingImage;
+  XFile? _localCompleteImage;
+
   late Map<String, dynamic> _appt;
 
   @override
@@ -86,12 +89,25 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     }
   }
 
+  Future<void> _pickAppointmentImage(String fieldKey) async {
+    final file = await _picker.pickImage(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+
+    setState(() {
+      if (fieldKey == 'viewingImage') {
+        _localViewingImage = file;
+      } else {
+        _localCompleteImage = file;
+      }
+    });
+  }
+
   Future<void> _uploadAppointmentImage(String fieldKey) async {
     final id = _appointmentId();
     if (id.isEmpty) return;
 
-    final file = await _picker.pickImage(source: ImageSource.gallery);
-    if (file == null || !mounted) return;
+    final file = fieldKey == 'viewingImage' ? _localViewingImage : _localCompleteImage;
+    if (file == null) return;
 
     setState(() {
       if (fieldKey == 'viewingImage') {
@@ -105,6 +121,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       final updated = Map<String, dynamic>.from(_appt)
         ..remove('_apartment')
         ..remove('_user');
+
+      if (fieldKey == 'viewingImage') {
+        updated['status'] = 'Dang xem';
+      } else if (fieldKey == 'completeImage') {
+        updated['status'] = 'Hoan thanh';
+      }
 
       final request = http.MultipartRequest(
         'PUT',
@@ -135,9 +157,23 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
               ..._appt,
               ...decodedBody!,
             };
+            if (fieldKey == 'viewingImage') {
+              _localViewingImage = null;
+            } else {
+              _localCompleteImage = null;
+            }
           });
         } else {
           await _reloadAppointment();
+          if (mounted) {
+            setState(() {
+              if (fieldKey == 'viewingImage') {
+                _localViewingImage = null;
+              } else {
+                _localCompleteImage = null;
+              }
+            });
+          }
         }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -305,6 +341,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         ..remove('_user');
       final isoUtc = _selectedAppointmentDateTime!.toUtc().toIso8601String();
       updated['appointmentTime'] = isoUtc;
+      updated['status'] = 'Da xac nhan lich';
 
       final response = await http.put(
         ApiConfig.uri('/api/viewing-appointments/$id/'),
@@ -316,11 +353,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         if (!mounted) return;
         setState(() {
           _appt['appointmentTime'] = isoUtc;
+          _appt['status'] = 'Da xac nhan lich';
           _selectedAppointmentDateTime = null;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Đã cập nhật thời gian hẹn'),
+            content: const Text('Đã cập nhật thời gian hẹn và trạng thái'),
             backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
           ),
@@ -417,23 +455,23 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     if (newStatus == _appt['status']) return; // No change
 
     final statusLabels = {
-      'Dang lien he': 'Contacting',
-      'Da xac nhan lich': 'Schedule confirmed',
-      'Dang xem': 'Viewing',
-      'Hoan thanh': 'Completed',
+      'Dang lien he': 'Đang liên hệ',
+      'Da xac nhan lich': 'Đã xác nhận lịch',
+      'Dang xem': 'Đang xem',
+      'Hoan thanh': 'Hoàn thành',
     };
     final label = statusLabels[newStatus] ?? newStatus;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm cập nhật'),
+        title: const Text('Xác nhận cập nhật'),
         content:
-            Text('Bạn có chắc chắn muốn chuyển trạng thái thành "$label"?'),
+            Text('Bạn có chắc chắn muốn chuyển trạng thái?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -446,7 +484,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
             },
             style: ElevatedButton.styleFrom(
                 backgroundColor: primaryBlue, foregroundColor: Colors.white),
-            child: const Text('Confirm'),
+            child: const Text('Xác nhận'),
           ),
         ],
       ),
@@ -458,7 +496,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Cần đủ ảnh  xem nhà và hoàn thành xem nhà trước khi close deal'),
+              'Cần đủ ảnh xem nhà và hoàn thành xem nhà trước khi close deal'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -471,7 +509,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         title: const Text('Confirm hoàn thành',
             style: TextStyle(color: Colors.red)),
         content:
-            const Text('Khi đã close deal sẽ không thể hoàn tác. Confirm?'),
+            const Text('Khi đã close deal sẽ không thể hoàn tác. Xác nhận?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -599,17 +637,17 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
   String _statusLabel(String? status) {
     switch (status) {
       case 'Yeu cau xem':
-        return 'Viewing Request';
+        return 'Yêu cầu xem';
       case 'Dang lien he':
-        return 'Contacting';
+        return 'Đang liên hệ';
       case 'Da xac nhan':
         return 'Đã xác nhận';
       case 'Da xac nhan lich':
-        return 'Schedule confirmed';
+        return 'Đã xác nhận lịch';
       case 'Dang xem':
-        return 'Viewing';
+        return 'Đang xem';
       case 'Hoan thanh':
-        return 'Completed';
+        return 'Hoàn thành';
       case 'Huy':
         return 'Đã hủy';
       default:
@@ -621,11 +659,14 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     required String title,
     required bool hasImage,
     required String imageUrl,
+    required XFile? localImage,
     required bool isUploading,
     required bool canUpload,
-    required VoidCallback onUpload,
+    required VoidCallback onPickLocal,
+    required VoidCallback onConfirmSend,
     required VoidCallback onView,
   }) {
+    final hasAnyImage = hasImage || localImage != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -633,7 +674,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: hasImage
+          color: hasAnyImage
               ? Colors.green.withOpacity(0.35)
               : primaryBlue.withOpacity(0.15),
         ),
@@ -644,8 +685,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
           Row(
             children: [
               Icon(
-                hasImage ? Icons.check_circle_rounded : Icons.image_outlined,
-                color: hasImage ? Colors.green : primaryBlue,
+                hasAnyImage ? Icons.check_circle_rounded : Icons.image_outlined,
+                color: hasAnyImage ? Colors.green : primaryBlue,
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -663,14 +704,29 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            hasImage ? 'Đã có ảnh' : 'Chưa có ảnh',
+            localImage != null
+                ? 'Đã chọn ảnh (chưa gửi)'
+                : (hasImage ? 'Đã tải ảnh lên' : 'Chưa có ảnh'),
             style: TextStyle(
               fontSize: 13,
-              color: hasImage ? Colors.green[700] : Colors.grey[700],
+              color: localImage != null
+                  ? Colors.orange[700]
+                  : (hasImage ? Colors.green[700] : Colors.grey[700]),
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (imageUrl.isNotEmpty) ...[
+          if (localImage != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              localImage.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange[600],
+              ),
+            ),
+          ] else if (imageUrl.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               imageUrl,
@@ -687,15 +743,9 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: isUploading || !canUpload ? null : onUpload,
-                  icon: isUploading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.upload_rounded, size: 18),
-                  label: Text(hasImage ? 'Upload lại' : 'Upload ảnh'),
+                  onPressed: isUploading || !canUpload ? null : onPickLocal,
+                  icon: const Icon(Icons.image_rounded, size: 18),
+                  label: Text(hasAnyImage ? 'Chọn lại' : 'Chọn ảnh'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: primaryBlue,
                     side: BorderSide(color: primaryBlue.withOpacity(0.35)),
@@ -706,20 +756,44 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: hasImage ? onView : null,
-                  icon: const Icon(Icons.visibility_rounded, size: 18),
-                  label: const Text('Xem ảnh'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: hasImage ? primaryBlue : Colors.grey[350],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              if (localImage != null)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isUploading || !canUpload ? null : onConfirmSend,
+                    icon: isUploading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Xác nhận gửi', style: TextStyle(fontSize: 13)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: hasImage ? onView : null,
+                    icon: const Icon(Icons.visibility_rounded, size: 18),
+                    label: const Text('Xem ảnh'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          hasImage ? primaryBlue : Colors.grey[350],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -970,9 +1044,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                           title: 'Hình ảnh xem nhà',
                           hasImage: hasViewingImage,
                           imageUrl: viewingImage,
+                          localImage: _localViewingImage,
                           isUploading: _isUploadingViewingImage,
                           canUpload: isMine,
-                          onUpload: () =>
+                          onPickLocal: () =>
+                              _pickAppointmentImage('viewingImage'),
+                          onConfirmSend: () =>
                               _uploadAppointmentImage('viewingImage'),
                           onView: () =>
                               _showImagePreview('Viewing Image', viewingImage),
@@ -982,9 +1059,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                           title: 'Hình ảnh hoàn thành',
                           hasImage: hasCompleteImage,
                           imageUrl: completeImage,
+                          localImage: _localCompleteImage,
                           isUploading: _isUploadingCompleteImage,
                           canUpload: isMine,
-                          onUpload: () =>
+                          onPickLocal: () =>
+                              _pickAppointmentImage('completeImage'),
+                          onConfirmSend: () =>
                               _uploadAppointmentImage('completeImage'),
                           onView: () => _showImagePreview(
                               'Complete Image', completeImage),
@@ -1126,7 +1206,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                       color: Colors.green[600], size: 22),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Completed Jobs',
+                                    'Công việc đã hoàn thành !',
                                     style: TextStyle(
                                       color: Colors.green[700],
                                       fontWeight: FontWeight.w700,
@@ -1170,7 +1250,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                 icon: const Icon(Icons.request_quote_rounded,
                                     size: 22),
                                 label: const Text(
-                                  'Deposit Request',
+                                  'Tạo yêu cầu đặt cọc',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
@@ -1194,102 +1274,6 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                           : Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                        color: primaryBlue.withOpacity(0.3)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: primaryBlue.withOpacity(0.05),
-                                        blurRadius: 10,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Text(
-                                        'Status:',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _isUpdatingStatus
-                                            ? const Center(
-                                                child: SizedBox(
-                                                  width: 24,
-                                                  height: 24,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    color: primaryBlue,
-                                                    strokeWidth: 2,
-                                                  ),
-                                                ),
-                                              )
-                                            : DropdownButtonHideUnderline(
-                                                child: DropdownButton<String>(
-                                                  value: [
-                                                    'Dang lien he',
-                                                    'Da xac nhan lich',
-                                                    'Dang xem',
-                                                    'Yeu cau xem'
-                                                  ].contains(status)
-                                                      ? status
-                                                      : null,
-                                                  hint: const Text(
-                                                      'Chọn trạng thái'),
-                                                  isExpanded: true,
-                                                  icon: const Icon(
-                                                    Icons
-                                                        .arrow_drop_down_rounded,
-                                                    color: primaryBlue,
-                                                  ),
-                                                  style: const TextStyle(
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: primaryBlue,
-                                                  ),
-                                                  items: const [
-                                                    DropdownMenuItem(
-                                                      value: 'Yeu cau xem',
-                                                      child: Text(
-                                                          'Viewing Request'),
-                                                    ),
-                                                    DropdownMenuItem(
-                                                      value: 'Dang lien he',
-                                                      child: Text('Contacting'),
-                                                    ),
-                                                    DropdownMenuItem(
-                                                      value: 'Da xac nhan lich',
-                                                      child: Text(
-                                                          'Schedule confirmed'),
-                                                    ),
-                                                    DropdownMenuItem(
-                                                      value: 'Dang xem',
-                                                      child: Text('Viewing'),
-                                                    ),
-                                                  ],
-                                                  onChanged: (val) {
-                                                    if (val != null) {
-                                                      _showStatusConfirmation(
-                                                          val);
-                                                    }
-                                                  },
-                                                ),
-                                              ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                                 const SizedBox(height: 12),
                                 if (canFinishAppointment)
                                   SizedBox(
@@ -1332,7 +1316,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                       ),
                                     ),
                                     child: const Text(
-                                      'Cần upload đủ viewingImage và completeImage để hiện nút Hoàn thành',
+                                      'Cần upload đủ ảnh xem nhà và hoàn thành xem để hoàn tất',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,

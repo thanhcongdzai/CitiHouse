@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -132,8 +132,14 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
 
     try {
       final updated = Map<String, dynamic>.from(user);
-      updated['isActive'] = true;
-      updated['status'] = 'Approved';
+      
+      if (_selectedTab == StaffApprovalTab.accountActivation) {
+        updated['role'] = 'User';
+        updated['status'] = 'Approved';
+      } else {
+        updated['isActive'] = true;
+        updated['status'] = 'Pending';
+      }
 
       final response = await http.put(
         ApiConfig.uri('/api/users/$userId/'),

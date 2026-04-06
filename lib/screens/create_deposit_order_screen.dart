@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -165,9 +165,9 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
       "staffId": widget.staffId,
       "buyerId": buyerIdStr,
       "depositAmount": _depositAmount,
-      "status": "Cho thanh toan",
+      "status": "cho duyet coc",
       "createdAt": DateTime.now().toUtc().toIso8601String(),
-      "expiredAt": null,
+      "expiredAt": DateTime.now().add(const Duration(days: 3)).toUtc().toIso8601String(),
       "paymentEvidence": "",
       "notes": "Yeu cau coc"
     };
@@ -210,7 +210,7 @@ class _CreateDepositOrderScreenState extends State<CreateDepositOrderScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Gửi yêu cầu đặt cọ thành công!'),
+              content: Text('Gửi yêu cầu đặt cọc thành công!'),
               backgroundColor: Colors.green),
         );
         Navigator.pop(context, true);

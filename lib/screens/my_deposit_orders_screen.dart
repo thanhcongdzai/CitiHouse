@@ -1,8 +1,9 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'package:intl/intl.dart';
+import 'my_deposit_order_detail_screen.dart';
 
 class MyDepositOrdersScreen extends StatefulWidget {
   final String userId;
@@ -43,7 +44,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
 
       final orders = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;
 
-      // Fetch apartment names
+      // Fetch apartment names for the list view
       final aptRes = await http.get(ApiConfig.uri('/api/apartments/'));
       final Map<String, String> aptMap = {};
       if (aptRes.statusCode == 200) {
@@ -96,11 +97,11 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
   String _statusLabel(String? status) {
     switch (status) {
       case 'cho duyet coc':
-        return 'Pending cọc';
+        return 'Chờ xác nhận đặt cọc';
       case 'Cho thanh toan':
-        return 'Pending Payment';
+        return 'Chờ thanh toán đặt cọc';
       case 'Da thanh toan':
-        return 'Paid';
+        return 'Đã thanh toán đặt cọc';
       default:
         return status ?? 'Unknown';
     }
@@ -194,7 +195,6 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
@@ -206,6 +206,20 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
                                 ),
                               ],
                             ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MyDepositOrderDetailScreen(order: order),
+                                      ),
+                                    );
+                                  },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -252,6 +266,7 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
                                 const Divider(height: 1, thickness: 0.5),
                                 const SizedBox(height: 14),
 
+                                // Deposit amount
                                 // Deposit amount
                                 Row(
                                   children: [
@@ -311,6 +326,9 @@ class _MyDepositOrdersScreenState extends State<MyDepositOrdersScreen> {
                                 ],
                               ],
                             ),
+                                  ),
+                                ),
+                              ),
                           );
                         },
                       ),

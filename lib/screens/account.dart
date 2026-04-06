@@ -694,7 +694,6 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
         'gender': _genderController.text.trim(),
         'address': _addressController.text.trim(),
         'email': _emailController.text.trim(),
-        'isActive': widget.user.isActive.toString(),
         'role': widget.user.role,
       });
 
