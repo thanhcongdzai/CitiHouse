@@ -7,7 +7,9 @@ import '../config/api_config.dart';
 import '../models/user.dart';
 import 'my_appointments_screen.dart';
 import 'my_deposit_orders_screen.dart';
+import 'my_paid_deposits_screen.dart';
 import 'upload_avatar_screen.dart';
+import 'my_posted_apartments_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   final User? currentUser;
@@ -102,9 +104,13 @@ class _AccountScreenState extends State<AccountScreen> {
       );
       if (res.statusCode == 200) {
         final data = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;
+        
+        // Lọc các order chưa thanh toán
+        final activeOrders = data.where((o) => o['status'] != 'Da thanh toan').toList();
+        
         if (mounted) {
           setState(() {
-            _depositOrderCount = data.length;
+            _depositOrderCount = activeOrders.length;
           });
         }
       }
@@ -265,14 +271,14 @@ class _AccountScreenState extends State<AccountScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _statItem(
-                                '0', 'Listings', Icons.home_work_outlined),
+                                '0', 'Đã đăng', Icons.home_work_outlined),
                             _vDivider(),
-                            _statItem('0', 'Saved', Icons.bookmark_outline),
+                            _statItem('0', 'Đã lưu', Icons.bookmark_outline),
                             _vDivider(),
                             _statItem(
-                                '0', 'Contracts', Icons.description_outlined),
+                                '0', 'Hợp đồng', Icons.description_outlined),
                             _vDivider(),
-                            _statItem('-', 'Rating', Icons.star_outline),
+                            _statItem('-', 'Đánh giá', Icons.star_outline),
                           ],
                         ),
                       ),
@@ -288,19 +294,19 @@ class _AccountScreenState extends State<AccountScreen> {
             _sectionCard(
               child: Column(
                 children: [
-                  _infoRow(Icons.phone_android_rounded, 'Phone',
+                  _infoRow(Icons.phone_android_rounded, 'Số điện thoại',
                       _displayValue(user.phone), Colors.teal),
                   _divider(),
-                  _infoRow(Icons.cake_outlined, 'Date of Birth',
+                  _infoRow(Icons.cake_outlined, 'Ngày sinh',
                       _displayValue(_dob), Colors.orange),
                   _divider(),
                   _infoRow(Icons.badge_outlined, 'CCCD',
                       _displayValue(user.cccd), Colors.indigo),
                   _divider(),
-                  _infoRow(Icons.person_outline_rounded, 'Gender',
+                  _infoRow(Icons.person_outline_rounded, 'Giới tính',
                       _displayValue(_gender), Colors.pink),
                   _divider(),
-                  _infoRow(Icons.home_outlined, 'Address',
+                  _infoRow(Icons.home_outlined, 'Địa chỉ',
                       _displayValue(_address), Colors.green),
                 ],
               ),
@@ -312,13 +318,13 @@ class _AccountScreenState extends State<AccountScreen> {
             _sectionCard(
               child: Column(
                 children: [
-                  _sectionHeader('My Transactions', 'View All'),
+                  _sectionHeader('Giao dịch của tôi', 'Xem tất cả'),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _orderStatus(
-                          context, Icons.pending_outlined, 'Pending', primary,
+                          context, Icons.pending_outlined, 'Chờ thanh toán', primary,
                           onTap: () {
                         Navigator.push(
                           context,
@@ -328,14 +334,18 @@ class _AccountScreenState extends State<AccountScreen> {
                           ),
                         ).then((_) => _fetchDepositOrderCount());
                       }, badgeCount: _depositOrderCount),
-                      _orderStatus(context, Icons.handshake_outlined,
-                          'Negotiating', primary),
-                      _orderStatus(
-                          context, Icons.draw_outlined, 'Signing', primary),
                       _orderStatus(context, Icons.check_circle_outline,
-                          'Completed', primary),
+                          'Đã thanh toán', primary, onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                MyPaidDepositsScreen(userId: user.id),
+                          ),
+                        );
+                      }),
                       _orderStatus(
-                          context, Icons.cancel_outlined, 'Cancelled', primary),
+                          context, Icons.cancel_outlined, 'Đã hủy', primary),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -349,11 +359,11 @@ class _AccountScreenState extends State<AccountScreen> {
             _sectionCard(
               child: Column(
                 children: [
-                  _menuTile(Icons.favorite_outline, Colors.redAccent,
-                      'My Properties', 'Your apartments'),
+                  _menuTile(Icons.favorite_border_outlined, Colors.redAccent,
+                      'Bất động sản đã cọc', 'Danh sách hoàn tất cọc'),
                   _divider(),
                   _menuTile(Icons.calendar_month_outlined, Colors.teal,
-                      'My Appointments', 'Schedule & history', onTap: () {
+                      'Lịch hẹn của tôi', 'Lịch hẹn và lịch sử', onTap: () {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -362,10 +372,16 @@ class _AccountScreenState extends State<AccountScreen> {
                   }),
                   _divider(),
                   _menuTile(Icons.home_work_outlined, Colors.indigo,
-                      'My Listings', 'Manage your properties'),
+                      'Bất động sản đã đăng', 'Quản lý bất động sản đã đăng', onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                MyPostedApartmentsScreen(currentUser: user)));
+                  }),
                   _divider(),
                   _menuTile(Icons.notifications_outlined, secondary,
-                      'Update My Informations', 'Update your profile',
+                      'Cập nhật thông tin', 'Cập nhật thông tin cá nhân',
                       onTap: _openMyInformations),
                 ],
               ),
@@ -386,7 +402,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   child: const Icon(Icons.logout, color: Colors.red, size: 22),
                 ),
-                title: const Text('Log Out',
+                title: const Text('Đăng xuất',
                     style: TextStyle(
                         color: Colors.red, fontWeight: FontWeight.w700)),
                 trailing: const Icon(Icons.chevron_right,
@@ -405,8 +421,8 @@ class _AccountScreenState extends State<AccountScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
@@ -484,7 +500,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               child: const Row(
                 children: [
-                  Text('View All',
+                  Text('Xem tất cả',
                       style: TextStyle(
                           color: primary,
                           fontSize: 12,
@@ -731,13 +747,13 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Update failed: ${response.statusCode}')),
+          SnackBar(content: Text('Cập nhật thất bại: ${response.statusCode}')),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('Lỗi: $e')),
       );
     } finally {
       if (mounted) {
@@ -755,112 +771,157 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        title: const Text('My Informations'),
+        title: const Text('Cập nhật thông tin', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
+        iconTheme: const IconThemeData(color: Colors.black87),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _fieldCard(
-                title: 'First Name',
-                child: TextFormField(
-                  controller: _firstNameController,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Required' : null,
-                ),
+              _buildSectionHeader('Thông tin cá nhân', Icons.person_outline),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _firstNameController,
+                      decoration: _inputDecoration('Tên', prefixIcon: Icons.badge_outlined),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lastNameController,
+                      decoration: _inputDecoration('Họ'),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                    ),
+                  ),
+                ],
               ),
-              _fieldCard(
-                title: 'Last Name',
-                child: TextFormField(
-                  controller: _lastNameController,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Required' : null,
-                ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _dobController,
+                      readOnly: true,
+                      decoration: _inputDecoration('Ngày sinh', prefixIcon: Icons.calendar_today_outlined),
+                      onTap: () async {
+                        DateTime? initialDate;
+                        try {
+                          if (_dobController.text.isNotEmpty) {
+                            initialDate = DateTime.parse(_dobController.text);
+                          }
+                        } catch (_) {}
+
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: initialDate ?? DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+
+                        if (picked != null) {
+                          _dobController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                        }
+                      },
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: () {
+                        final g = _genderController.text.trim().toLowerCase();
+                        if (g == 'male' || g == 'nam') return 'Male';
+                        if (g == 'female' || g == 'nữ' || g == 'nu') return 'Female';
+                        return null;
+                      }(),
+                      decoration: _inputDecoration('Gender', prefixIcon: Icons.transgender_outlined),
+                      items: const [
+                        DropdownMenuItem(value: 'Male', child: Text('Nam')),
+                        DropdownMenuItem(value: 'Female', child: Text('Nữ')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          _genderController.text = val;
+                        }
+                      },
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                    ),
+                  ),
+                ],
               ),
-              _fieldCard(
-                title: 'Date of Birth (yyyy-mm-dd)',
-                child: TextFormField(
-                  controller: _dobController,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Required' : null,
-                ),
+              
+              _buildSectionHeader('Thông tin liên lạc', Icons.contact_mail_outlined),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _inputDecoration('Email', prefixIcon: Icons.email_outlined),
+                validator: (v) {
+                  final value = v?.trim() ?? '';
+                  if (value.isEmpty) return 'Bắt buộc';
+                  if (!_emailRegex.hasMatch(value)) return 'Email không hợp lệ';
+                  return null;
+                },
               ),
-              _fieldCard(
-                title: 'Gender',
-                child: TextFormField(
-                  controller: _genderController,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Required' : null,
-                ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _addressController,
+                decoration: _inputDecoration('Địa chỉ', prefixIcon: Icons.home_outlined),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
               ),
-              _fieldCard(
-                title: 'Address',
-                child: TextFormField(
-                  controller: _addressController,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Required' : null,
-                ),
-              ),
-              _fieldCard(
-                title: 'Email',
-                child: TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    final value = v?.trim() ?? '';
-                    if (value.isEmpty) return 'Required';
-                    if (!_emailRegex.hasMatch(value)) return 'Invalid email';
-                    return null;
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'CCCD Images',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 12),
+
+              _buildSectionHeader('CCCD', Icons.assignment_ind_outlined),
               _uploadTile(
-                title: 'CCCD Front Side',
+                title: 'CCCD Mặt Trước',
                 file: _cccdFrontImage,
                 onTap: () => _pickImage(true),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _uploadTile(
-                title: 'CCCD Back Side',
+                title: 'CCCD Mặt Sau',
                 file: _cccdBackImage,
                 onTap: () => _pickImage(false),
               ),
-              const SizedBox(height: 24),
+              
+              const SizedBox(height: 32),
               SizedBox(
-                height: 52,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _saveInformations,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2361DB),
                     foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
                   ),
                   child: _isSaving
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 24,
+                          height: 24,
                           child: CircularProgressIndicator(
                             color: Colors.white,
-                            strokeWidth: 2,
+                            strokeWidth: 2.5,
                           ),
                         )
                       : const Text(
-                          'Save Informations',
+                          'Save Changes',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            letterSpacing: 0.5,
                           ),
                         ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -868,29 +929,54 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
     );
   }
 
-  Widget _fieldCard({required String title, required Widget child}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 16),
+      child: Row(
         children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2361DB).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFF2361DB), size: 20),
+          ),
+          const SizedBox(width: 12),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
               color: Colors.black87,
+              letterSpacing: 0.3,
             ),
           ),
-          const SizedBox(height: 8),
-          child,
         ],
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, {IconData? prefixIcon}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey.shade500, size: 20) : null,
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF2361DB), width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
@@ -907,6 +993,13 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade300),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -915,22 +1008,42 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
               height: 64,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                color: Colors.grey.shade100,
+                color: Colors.grey.shade50,
+                border: Border.all(color: Colors.grey.shade200),
               ),
               clipBehavior: Clip.antiAlias,
               child: file != null
                   ? Image.file(file, fit: BoxFit.cover)
                   : Icon(Icons.add_a_photo_outlined,
-                      color: Colors.grey.shade600),
+                      color: Colors.grey.shade400, size: 28),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                file != null ? '$title selected' : 'Tap to upload $title',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    file != null ? 'Đã chọn ảnh' : 'Nhấn để tải ảnh lên',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2361DB).withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_upload_outlined, color: Color(0xFF2361DB), size: 20),
+            ),
           ],
         ),
       ),
