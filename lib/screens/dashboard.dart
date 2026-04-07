@@ -38,6 +38,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _selectedBuilding;
   int? _selectedFloor;
 
+  int? _selectedBedRoom;
+  int? _selectedLivingRoom;
+  int? _selectedDiningRoom;
+  int? _selectedKitchen;
+  int? _selectedBathRoom;
+  double? _minArea;
+  double? _maxArea;
+
   // Extracted options
   Set<String> _wards = {};
   Set<String> _communes = {};
@@ -52,7 +60,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _selectedCommune != null ||
       _selectedProject != null ||
       _selectedBuilding != null ||
-      _selectedFloor != null;
+      _selectedFloor != null ||
+      _selectedBedRoom != null ||
+      _selectedLivingRoom != null ||
+      _selectedDiningRoom != null ||
+      _selectedKitchen != null ||
+      _selectedBathRoom != null ||
+      _minArea != null ||
+      _maxArea != null;
 
   @override
   void initState() {
@@ -326,6 +341,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         if (_selectedFloor != null && apt.floor != _selectedFloor) return false;
 
+        if (_selectedBedRoom != null && apt.bedRoom != _selectedBedRoom) {
+          return false;
+        }
+        if (_selectedLivingRoom != null && apt.livingRoom != _selectedLivingRoom) {
+          return false;
+        }
+        if (_selectedDiningRoom != null && apt.diningRoom != _selectedDiningRoom) {
+          return false;
+        }
+        if (_selectedKitchen != null && apt.kitchen != _selectedKitchen) {
+          return false;
+        }
+        if (_selectedBathRoom != null && apt.bathRoom != _selectedBathRoom) {
+          return false;
+        }
+        if (_minArea != null && (apt.area ?? 0.0) < _minArea!) return false;
+        if (_maxArea != null && (apt.area ?? 0.0) > _maxArea!) return false;
+
         return true;
       }).toList();
     });
@@ -391,6 +424,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _selectedProject = null;
                               _selectedBuilding = null;
                               _selectedFloor = null;
+                              _selectedBedRoom = null;
+                              _selectedLivingRoom = null;
+                              _selectedDiningRoom = null;
+                              _selectedKitchen = null;
+                              _selectedBathRoom = null;
+                              _minArea = null;
+                              _maxArea = null;
                               _refreshProjectOptions();
                             });
                             _applyFilters();
@@ -589,6 +629,154 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _refreshProjectOptions();
                             }),
                           ),
+                        const SizedBox(height: 12),
+                        _buildRoomDropdown(
+                          title: 'Bedroom',
+                          icon: Icons.king_bed_rounded,
+                          value: _selectedBedRoom,
+                          onChanged: (val) => setModalState(() {
+                            _selectedBedRoom = val;
+                          }),
+                        ),
+                        _buildRoomDropdown(
+                          title: 'Living Room',
+                          icon: Icons.weekend_rounded,
+                          value: _selectedLivingRoom,
+                          onChanged: (val) => setModalState(() {
+                            _selectedLivingRoom = val;
+                          }),
+                        ),
+                        _buildRoomDropdown(
+                          title: 'Dining Room',
+                          icon: Icons.dining_rounded,
+                          value: _selectedDiningRoom,
+                          onChanged: (val) => setModalState(() {
+                            _selectedDiningRoom = val;
+                          }),
+                        ),
+                        _buildRoomDropdown(
+                          title: 'Kitchen',
+                          icon: Icons.soup_kitchen_rounded,
+                          value: _selectedKitchen,
+                          onChanged: (val) => setModalState(() {
+                            _selectedKitchen = val;
+                          }),
+                        ),
+                        _buildRoomDropdown(
+                          title: 'Bathroom',
+                          icon: Icons.bathtub_rounded,
+                          value: _selectedBathRoom,
+                          onChanged: (val) => setModalState(() {
+                            _selectedBathRoom = val;
+                          }),
+                        ),
+                        _buildFilterSection(
+                          title: 'Area (m²)',
+                          icon: Icons.square_foot_rounded,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                        color: primaryBlue.withOpacity(0.4),
+                                        width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: primaryBlue.withOpacity(0.08),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: TextField(
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: InputDecoration(
+                                      suffixText: 'm²',
+                                      suffixStyle: TextStyle(
+                                          color: primaryBlue,
+                                          fontWeight: FontWeight.bold),
+                                      labelText: 'Min',
+                                      labelStyle: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      filled: true,
+                                      fillColor: cardBlue,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 16),
+                                    ),
+                                    onChanged: (val) {
+                                      _minArea = double.tryParse(val);
+                                    },
+                                    controller: TextEditingController(
+                                        text: _minArea?.toStringAsFixed(0) ?? ''),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('-',
+                                    style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w300)),
+                              ),
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                        color: primaryBlue.withOpacity(0.4),
+                                        width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: primaryBlue.withOpacity(0.08),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: TextField(
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: InputDecoration(
+                                      suffixText: 'm²',
+                                      suffixStyle: TextStyle(
+                                          color: primaryBlue,
+                                          fontWeight: FontWeight.bold),
+                                      labelText: 'Max',
+                                      labelStyle: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      filled: true,
+                                      fillColor: cardBlue,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 16),
+                                    ),
+                                    onChanged: (val) {
+                                      _maxArea = double.tryParse(val);
+                                    },
+                                    controller: TextEditingController(
+                                        text: _maxArea?.toStringAsFixed(0) ?? ''),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -676,6 +864,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child,
         ],
       ),
+    );
+  }
+
+  Widget _buildRoomDropdown({
+    required String title,
+    required IconData icon,
+    required int? value,
+    required void Function(int?) onChanged,
+  }) {
+    return _buildDropdownSection(
+      title: title,
+      icon: icon,
+      value: value?.toString(),
+      items: ['1', '2', '3', '4'],
+      onChanged: (val) {
+        if (val == null) {
+          onChanged(null);
+        } else {
+          onChanged(int.tryParse(val));
+        }
+      },
     );
   }
 
@@ -888,6 +1097,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _selectedProject = null;
                           _selectedBuilding = null;
                           _selectedFloor = null;
+                          _selectedBedRoom = null;
+                          _selectedLivingRoom = null;
+                          _selectedDiningRoom = null;
+                          _selectedKitchen = null;
                           _refreshProjectOptions();
                         });
                         _applyFilters();
@@ -1091,13 +1304,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Row(
                                   children: [
                                     _buildFeature(
-                                        Icons.king_bed_rounded, '2 Beds'),
+                                        Icons.king_bed_rounded, '${item.bedRoom} Beds'),
                                     _buildDotSeparator(),
                                     _buildFeature(
-                                        Icons.bathtub_rounded, '2 Baths'),
-                                    _buildDotSeparator(),
-                                    _buildFeature(
-                                        Icons.square_foot_rounded, '80 m2'),
+                                        Icons.bathtub_rounded, '${item.bathRoom} Baths'),
+                                    if (item.area != null && item.area! > 0) ...[
+                                      _buildDotSeparator(),
+                                      _buildFeature(
+                                          Icons.square_foot_rounded, '${item.area} m²'),
+                                    ],
                                   ],
                                 ),
                                 const SizedBox(height: 16),

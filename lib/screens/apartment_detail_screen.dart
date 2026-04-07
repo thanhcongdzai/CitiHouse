@@ -772,6 +772,42 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                     widget.apartment.displayCode, Icons.door_front_door)),
           ],
         ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+                child: _buildGridItem('Phòng ngủ',
+                    widget.apartment.bedRoom.toString(), Icons.bed)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildGridItem('Phòng khách',
+                    widget.apartment.livingRoom.toString(), Icons.weekend)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+                child: _buildGridItem('Phòng ăn',
+                    widget.apartment.diningRoom.toString(), Icons.dining)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildGridItem('Phòng bếp',
+                    widget.apartment.kitchen.toString(), Icons.kitchen)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+                child: _buildGridItem('Phòng tắm',
+                    widget.apartment.bathRoom.toString(), Icons.bathtub)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildGridItem('Diện tích',
+                    (widget.apartment.area != null && widget.apartment.area! > 0) ? '${widget.apartment.area} m²' : '0', Icons.square_foot)),
+          ],
+        ),
       ],
     );
   }

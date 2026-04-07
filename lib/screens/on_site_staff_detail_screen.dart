@@ -217,6 +217,25 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     }
   }
 
+  Widget _buildRoomBadge(String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: primaryBlue.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: primaryBlue.withOpacity(0.15)),
+      ),
+      child: Text(
+        value,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: primaryBlue,
+        ),
+      ),
+    );
+  }
+
   void _showImagePreview(String title, String? rawUrl) {
     final imageUrl = _resolveImageUrl(rawUrl);
     if (imageUrl.isEmpty) return;
@@ -985,7 +1004,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: _isUpdatingAppointmentTime
+                                  onPressed: _isUpdatingAppointmentTime || !isMine
                                       ? null
                                       : _pickAppointmentDateTime,
                                   icon: const Icon(Icons.edit_calendar_rounded,
@@ -1014,7 +1033,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                               SizedBox(
                                 height: 40,
                                 child: ElevatedButton(
-                                  onPressed: _isUpdatingAppointmentTime
+                                  onPressed: _isUpdatingAppointmentTime || !isMine
                                       ? null
                                       : _updateAppointmentDateTime,
                                   style: ElevatedButton.styleFrom(
@@ -1095,6 +1114,28 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         if (aptStatus.isNotEmpty)
                           _InfoRow(
                               Icons.info_outline_rounded, 'Status: $aptStatus'),
+
+                        if (apartment != null) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (apartment['bedRoom'] != null && apartment['bedRoom'].toString() != '0')
+                                _buildRoomBadge('${apartment['bedRoom']} Phòng ngủ'),
+                              if (apartment['livingRoom'] != null && apartment['livingRoom'].toString() != '0')
+                                _buildRoomBadge('${apartment['livingRoom']} Phòng khách'),
+                              if (apartment['diningRoom'] != null && apartment['diningRoom'].toString() != '0')
+                                _buildRoomBadge('${apartment['diningRoom']} Phòng ăn'),
+                              if (apartment['kitchen'] != null && apartment['kitchen'].toString() != '0')
+                                _buildRoomBadge('${apartment['kitchen']} Bếp'),
+                              if (apartment['bathRoom'] != null && apartment['bathRoom'].toString() != '0')
+                                _buildRoomBadge('${apartment['bathRoom']} Phòng tắm'),
+                              if (apartment['area'] != null && apartment['area'].toString() != '0' && apartment['area'].toString() != '0.0')
+                                _buildRoomBadge('Diện tích: ${apartment['area']}m²'),
+                            ],
+                          ),
+                        ],
 
                         const SizedBox(height: 16),
                         const Divider(height: 1),

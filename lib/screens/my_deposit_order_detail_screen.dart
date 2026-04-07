@@ -193,15 +193,22 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 12),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: primaryBlue.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 16, color: primaryBlue),
+        ),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+              Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
               const SizedBox(height: 4),
-              Text(value, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: color ?? Colors.black87)),
+              Text(value, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: color ?? Colors.black87, height: 1.3)),
             ],
           ),
         ),
@@ -215,15 +222,17 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
     required List<Widget> children,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -232,19 +241,26 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
         children: [
           Row(
             children: [
-              Icon(icon, color: primaryBlue, size: 22),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: primaryBlue, size: 20),
+              ),
+              const SizedBox(width: 16),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: primaryBlue,
+                  color: Colors.black87,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           ...children,
         ],
       ),
@@ -363,7 +379,7 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
                       // Image Section
                       if (imageUrls.isNotEmpty)
                         SizedBox(
-                          height: 250,
+                          height: 300,
                           child: Stack(
                             children: [
                               PageView.builder(
@@ -387,19 +403,52 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
                                   );
                                 },
                               ),
+                              // Beautiful gradient overlay to make images look more premium
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 80,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [
+                                        Colors.black.withOpacity(0.6),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                               if (imageUrls.length > 1)
                                 Positioned(
-                                  bottom: 15,
-                                  right: 15,
+                                  bottom: 20,
+                                  right: 20,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
+                                      color: Colors.black.withOpacity(0.5),
                                       borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 10,
+                                        )
+                                      ]
                                     ),
-                                    child: Text(
-                                      '${_currentImageIndex + 1}/${imageUrls.length}',
-                                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.photo_library_outlined, color: Colors.white, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${_currentImageIndex + 1}/${imageUrls.length}',
+                                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -419,49 +468,128 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
                               children: [
                                 Text(
                                   aptName,
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, height: 1.3, letterSpacing: -0.5, color: Colors.black87),
                                 ),
                                 if (subject.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(subject, style: TextStyle(color: Colors.grey[700], fontStyle: FontStyle.italic)),
+                                  const SizedBox(height: 8),
+                                  Text(subject, style: TextStyle(color: Colors.grey[600], fontSize: 15, fontWeight: FontWeight.w500)),
                                 ],
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 24),
+                                Divider(color: Colors.grey.shade200, thickness: 1.5),
+                                const SizedBox(height: 20),
                                 _detailRow(Icons.tag, 'Mã căn hộ', displayCode),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 16),
                                 _detailRow(Icons.location_on_outlined, 'Vị trí', location),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 16),
                                 _detailRow(Icons.attach_money_rounded, 'Giá bán', priceDisplay, color: Colors.orange[800]),
+                                const SizedBox(height: 16),
                                 
-                                if (projectInfo != null) ...[
+                                Builder(
+                                  builder: (context) {
+                                    final bed = _apartmentInfo?['bedRoom']?.toString();
+                                    final bath = _apartmentInfo?['bathRoom']?.toString();
+                                    final living = _apartmentInfo?['livingRoom']?.toString();
+                                    final dining = _apartmentInfo?['diningRoom']?.toString();
+                                    final kitchen = _apartmentInfo?['kitchen']?.toString();
+
+                                    List<Widget> rooms = [];
+                                    
+                                    void addRoomText(String label, String? value) {
+                                      if (value != null && value != '0' && value.trim().isNotEmpty) {
+                                          rooms.add(
+                                            Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                              margin: const EdgeInsets.only(bottom: 8.0),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF8F9FA),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: Colors.grey.shade200),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14, fontWeight: FontWeight.w500)),
+                                                  const Spacer(),
+                                                  Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                                                ],
+                                              ),
+                                            )
+                                          );
+                                      }
+                                    }
+
+                                    addRoomText('Phòng ngủ', bed);
+                                    addRoomText('Phòng tắm', bath);
+                                    addRoomText('Phòng khách', living);
+                                    addRoomText('Phòng ăn', dining);
+                                    addRoomText('Nhà bếp', kitchen);
+
+                                    if (rooms.isEmpty) return const SizedBox.shrink();
+
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ...rooms,
+                                        const SizedBox(height: 4),
+                                      ],
+                                    );
+                                  },
+                                ),
+                                
+                                if (projectInfo != null && projectInfo.keys.any((k) => k != 'apartmentNumber' && k != 'projectId')) ...[
+                                  const SizedBox(height: 20),
+                                  Divider(color: Colors.grey.shade200, thickness: 1.5),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.business_rounded, size: 18, color: Colors.grey[700]),
+                                      const SizedBox(width: 8),
+                                      const Text('Chi tiết dự án', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    ],
+                                  ),
                                   const SizedBox(height: 16),
-                                  const Divider(),
-                                  const SizedBox(height: 16),
-                                  const Text('Chi tiết dự án', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                  const SizedBox(height: 12),
                                   ...projectInfo.entries
                                       .where((e) => e.key != 'apartmentNumber' && e.key != 'projectId')
                                       .map((e) {
                                         final label = projectInfoLabels[e.key] ?? e.key;
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 8.0),
+                                          padding: const EdgeInsets.only(bottom: 12.0),
                                           child: Row(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              const Icon(Icons.arrow_right, size: 20, color: Colors.grey),
-                                              Text('$label: ', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                                              Expanded(child: Text(e.value.toString(), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                                              Container(
+                                                margin: const EdgeInsets.only(top: 6),
+                                                child: const Icon(Icons.circle, size: 6, color: primaryBlue),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              SizedBox(width: 100, child: Text('$label', style: TextStyle(color: Colors.grey[600], fontSize: 14, fontWeight: FontWeight.w500))),
+                                              Expanded(child: Text(e.value.toString(), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87))),
                                             ],
                                           ),
                                         );
                                       }),
                                 ],
                                 if (description.isNotEmpty) ...[
-                                  const SizedBox(height: 16),
-                                  const Divider(),
-                                  const SizedBox(height: 16),
-                                  const Text('Mô tả', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                  const SizedBox(height: 20),
+                                  Divider(color: Colors.grey.shade200, thickness: 1.5),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.description_outlined, size: 18, color: Colors.grey[700]),
+                                      const SizedBox(width: 8),
+                                      const Text('Mô tả căn hộ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    ],
+                                  ),
                                   const SizedBox(height: 12),
-                                  Text(description, style: TextStyle(color: Colors.grey[800], height: 1.5, fontSize: 14)),
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8F9FA),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: Colors.grey.shade200)
+                                    ),
+                                    child: Text(description, style: TextStyle(color: Colors.grey[800], height: 1.6, fontSize: 14)),
+                                  ),
                                 ]
                               ],
                             ),
@@ -498,17 +626,19 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
       bottomSheet: _isLoading || _error != null || status != 'Cho thanh toan' ? null : Container(
         width: double.infinity,
         padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
+          left: 20,
+          right: 20,
           top: 16,
-          bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 16,
+          bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 20,
         ),
         decoration: BoxDecoration(
           color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 20,
+              spreadRadius: 2,
               offset: const Offset(0, -5),
             ),
           ],
@@ -518,23 +648,25 @@ class _MyDepositOrderDetailScreenState extends State<MyDepositOrderDetailScreen>
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryBlue,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: 18),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
-            elevation: 0,
+            elevation: 2,
+            shadowColor: primaryBlue.withOpacity(0.4),
           ),
           child: _isPaymentProcessing
               ? const SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                 )
               : const Text(
-                  'Thanh toán',
+                  'Thanh toán ngay',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
                   ),
                 ),
         ),

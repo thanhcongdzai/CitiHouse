@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -179,21 +179,33 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(32),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: Colors.white,
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryBlue.withOpacity(0.1),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
                             ),
                             child: Icon(
                               Icons.inbox_outlined,
-                              size: 72,
-                              color: Colors.blue[400],
+                              size: 80,
+                              color: Colors.blue[300],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
                           Text(
-                            _showApproved ? 'Chưa có đơn cọc nào đã duyệt' : 'None đơn cọc nào cần duyệt',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
+                            _showApproved ? 'Chưa có đơn cọc nào đã duyệt' : 'Không có đơn cọc nào',
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.black87),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _showApproved ? 'Danh sách trống' : 'Hiện chưa có yêu cầu duyệt cọc',
+                            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -214,102 +226,166 @@ class _DepositApprovalStaffScreenState extends State<DepositApprovalStaffScreen>
                           final buyerName = _buyerNames[buyerId] ?? 'N/A';
                           final aptName = _apartmentNames[aptId] ?? 'N/A';
 
-                          return GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DepositOrderDetailsScreen(
-                                    deposit: deposit,
-                                    staffName: staffName,
-                                    buyerName: buyerName,
-                                    apartmentName: aptName,
-                                    onActionCompleted: _fetchData,
-                                    currentUser: widget.currentUser,
-                                  ),
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryBlue.withOpacity(0.06),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
                                 ),
-                              );
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
+                              ],
+                              border: Border.all(color: Colors.blue.shade50, width: 2),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
                                 borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.apartment_rounded, color: primaryBlue, size: 20),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          aptName,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.black87,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.support_agent_rounded, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Staff: $staffName',
-                                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.person_outline_rounded, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Customer: $buyerName',
-                                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: _showApproved ? Colors.green.withOpacity(0.1) : accentYellow.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: _showApproved ? Colors.green.withOpacity(0.5) : accentYellow.withOpacity(0.5),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        _showApproved ? 'Approved' : 'Pending',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: _showApproved ? Colors.green[700] : const Color(0xFFB8860B),
-                                        ),
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => DepositOrderDetailsScreen(
+                                        deposit: deposit,
+                                        staffName: staffName,
+                                        buyerName: buyerName,
+                                        apartmentName: aptName,
+                                        onActionCompleted: _fetchData,
+                                        currentUser: widget.currentUser,
                                       ),
                                     ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: primaryBlue.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(14),
+                                            ),
+                                            child: const Icon(Icons.apartment_rounded, color: primaryBlue, size: 24),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  aptName,
+                                                  style: const TextStyle(
+                                                    fontSize: 17,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Colors.black87,
+                                                    height: 1.3,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                  decoration: BoxDecoration(
+                                                    color: _showApproved ? Colors.green.shade50 : Colors.orange.shade50,
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        _showApproved ? Icons.check_circle_rounded : Icons.pending_rounded,
+                                                        size: 14,
+                                                        color: _showApproved ? Colors.green[600] : Colors.orange[800],
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        _showApproved ? 'Đã duyệt (Chờ thanh toán)' : 'Chờ duyệt cọc',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w700,
+                                                          color: _showApproved ? Colors.green[700] : Colors.orange[800],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 20),
+                                      const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  radius: 16,
+                                                  backgroundColor: Colors.blue.shade50,
+                                                  child: const Icon(Icons.support_agent_rounded, size: 16, color: primaryBlue),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      const Text('Nhân viên', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                                      Text(
+                                                        staffName,
+                                                        style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w600),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(width: 1, height: 30, color: const Color(0xFFE5E7EB), margin: const EdgeInsets.symmetric(horizontal: 10)),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  radius: 16,
+                                                  backgroundColor: Colors.orange.shade50,
+                                                  child: Icon(Icons.person_outline_rounded, size: 16, color: Colors.orange.shade700),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      const Text('Khách hàng', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                                      Text(
+                                                        buyerName,
+                                                        style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w600),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           );

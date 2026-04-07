@@ -28,11 +28,20 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
   final _subjectCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
+  final _areaCtrl = TextEditingController();
 
   // Owner controllers
   final _ownerNameCtrl = TextEditingController();
   final _ownerPhoneCtrl = TextEditingController();
   List<File> _ownerCCCDImages = [];
+
+  // Room quantities
+  int? _selectedBedRooms;
+  int? _selectedLivingRooms;
+  int? _selectedDiningRooms;
+  int? _selectedKitchens;
+  int? _selectedBathRooms;
+  final List<int> _roomOptions = [1, 2, 3, 4];
 
   // Project data
   List<Map<String, dynamic>> _allProjects = [];
@@ -74,6 +83,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     _subjectCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
+    _areaCtrl.dispose();
     _ownerNameCtrl.dispose();
     _ownerPhoneCtrl.dispose();
 
@@ -221,7 +231,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         _hasOccupiedBy(_selectedUnit!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Nhà đã có người đăng'),
+          content: Text('Apartment already posted by someone else'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -304,7 +314,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
 
   Future<void> _submit() async {
     if (!_isApprovedUser) {
-      _showError('Tài khoản chưa được Approved nên không thể đăng nhà');
+      _showError('Account not approved. Cannot post apartment');
       return;
     }
 
@@ -320,7 +330,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
     }
 
     if (_hasOccupiedBy(_selectedUnit!)) {
-      _showError('Nhà đã có người đăng');
+      _showError('Apartment already posted by someone else');
       return;
     }
 
@@ -331,6 +341,12 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       "subject": _subjectCtrl.text.trim(),
       "description": _descCtrl.text.trim(),
       "price": int.tryParse(_priceCtrl.text.trim().replaceAll(',', '')) ?? 0,
+      "bedRoom": _selectedBedRooms ?? 0,
+      "livingRoom": _selectedLivingRooms ?? 0,
+      "diningRoom": _selectedDiningRooms ?? 0,
+      "kitchen": _selectedKitchens ?? 0,
+      "bathRoom": _selectedBathRooms ?? 0,
+      "area": double.tryParse(_areaCtrl.text.trim()) ?? 0,
       "location": {
         "ward": _selectedUnit!['commute'] ?? '',
         "commune": _selectedUnit!['ward'] ?? '',
@@ -416,7 +432,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           if (!mounted) return;
           setState(() => _isSubmitting = false);
           _showError(
-              'Đăng nhà thành công nhưng không thể cập nhật thông tin căn hộ đã được đăng');
+              'Apartment posted successfully but unable to update apartment info');
           return;
         }
 
@@ -429,7 +445,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           if (!mounted) return;
           setState(() => _isSubmitting = false);
           _showError(
-              'Dang nha thanh cong nhung cap nhat occupiedBy that bai: $e');
+              'Apartment posted but failed to update occupiedBy: $e');
           return;
         }
 
@@ -441,7 +457,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
               children: [
                 Icon(Icons.check_circle_rounded, color: Colors.white),
                 SizedBox(width: 12),
-                Text('Đăng nhà thành công!',
+                Text('Apartment posted successfully!',
                     style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
@@ -456,12 +472,12 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
       } else {
         if (!mounted) return;
         setState(() => _isSubmitting = false);
-        _showError('Lỗi ${resp.statusCode}: ${resp.body}');
+        _showError('Error ${resp.statusCode}: ${resp.body}');
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      _showError('Không kết nối được server: $e');
+      _showError('Unable to connect to server: $e');
     }
   }
 
@@ -498,7 +514,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Đăng giới thiệu căn hộ',
+          'Post Apartment',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -531,7 +547,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                           SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Tài khoản của bạn chưa được Approved nên không thể đăng nhà.',
+                              'Your account is not approved so you cannot post an apartment.',
                               style: TextStyle(
                                 color: Colors.red,
                                 fontWeight: FontWeight.w600,
@@ -544,104 +560,186 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     ),
                   ],
                   _buildSectionHeader(
-                      'Thông tin cơ bản', Icons.info_outline_rounded),
+                      'Basic Information', Icons.info_outline_rounded),
                   const SizedBox(height: 12),
                   _buildTextField(
                     controller: _titleCtrl,
-                    label: 'Tiêu đề *',
-                    hint: 'Nhập tiêu đề bài đăng',
+                    label: 'Title *',
+                    hint: 'Enter post title',
                     icon: Icons.title_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Vui lòng nhập tiêu đề'
+                        ? 'Please enter title'
                         : null,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _subjectCtrl,
-                    label: 'Chủ đề *',
-                    hint: 'Nhập chủ đề',
+                    label: 'Subject *',
+                    hint: 'Enter subject',
                     icon: Icons.subject_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Vui lòng nhập chủ đề'
+                        ? 'Please enter subject'
                         : null,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _descCtrl,
-                    label: 'Mô tả',
-                    hint: 'Mô tả chi tiết về căn hộ...',
+                    label: 'Description',
+                    hint: 'Detailed apartment description...',
                     icon: Icons.description_rounded,
                     maxLines: 4,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _priceCtrl,
-                    label: 'Giá (VND) *',
-                    hint: 'Nhập giá (VD: 3500000000)',
+                    label: 'Price (VND) *',
+                    hint: 'Enter price (Ex: 3500000000)',
                     icon: Icons.attach_money_rounded,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (v) {
                       if (v == null || v.trim().isEmpty)
-                        return 'Vui lòng nhập giá';
+                        return 'Please enter price';
                       if ((int.tryParse(v.trim()) ?? 0) <= 0)
-                        return 'Giá phải lớn hơn 0';
+                        return 'Price must be greater than 0';
                       return null;
                     },
                   ),
                   const SizedBox(height: 28),
+                  _buildSectionHeader('Room Information', Icons.bed_rounded),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDropdown<int>(
+                          label: 'Bedrooms',
+                          value: _selectedBedRooms,
+                          items: _roomOptions,
+                          itemLabel: (v) => v.toString(),
+                          onChanged: (v) => setState(() => _selectedBedRooms = v),
+                          hint: 'Select',
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildDropdown<int>(
+                          label: 'Living Rooms',
+                          value: _selectedLivingRooms,
+                          items: _roomOptions,
+                          itemLabel: (v) => v.toString(),
+                          onChanged: (v) => setState(() => _selectedLivingRooms = v),
+                          hint: 'Select',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDropdown<int>(
+                          label: 'Dining Rooms',
+                          value: _selectedDiningRooms,
+                          items: _roomOptions,
+                          itemLabel: (v) => v.toString(),
+                          onChanged: (v) => setState(() => _selectedDiningRooms = v),
+                          hint: 'Select',
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildDropdown<int>(
+                          label: 'Kitchens',
+                          value: _selectedKitchens,
+                          items: _roomOptions,
+                          itemLabel: (v) => v.toString(),
+                          onChanged: (v) => setState(() => _selectedKitchens = v),
+                          hint: 'Select',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDropdown<int>(
+                          label: 'Bathrooms',
+                          value: _selectedBathRooms,
+                          items: _roomOptions,
+                          itemLabel: (v) => v.toString(),
+                          onChanged: (v) => setState(() => _selectedBathRooms = v),
+                          hint: 'Select',
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildTextField(
+                          controller: _areaCtrl,
+                          label: 'Area (m²)',
+                          hint: 'Ex: 75.5',
+                          icon: Icons.square_foot_rounded,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
                   _buildSectionHeader(
-                      'Thông tin dự án', Icons.business_rounded),
+                      'Project Information', Icons.business_rounded),
                   const SizedBox(height: 12),
                   _buildDropdown<String>(
-                    label: 'Dự án *',
+                    label: 'Project *',
                     icon: Icons.location_city_rounded,
                     value: _selectedProject,
                     items: _projectOptions,
                     itemLabel: (v) => v,
                     onChanged: _onProjectSelected,
-                    hint: 'Chọn dự án',
-                    validator: (v) => v == null ? 'Vui lòng chọn dự án' : null,
+                    hint: 'Select project',
+                    validator: (v) => v == null ? 'Please select project' : null,
                   ),
                   if (_buildingOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<String>(
-                      label: 'Tòa nhà *',
+                      label: 'Building *',
                       icon: Icons.apartment_rounded,
                       value: _selectedBuilding,
                       items: _buildingOptions,
                       itemLabel: (v) => v,
                       onChanged: _onBuildingSelected,
-                      hint: 'Chọn tòa nhà',
+                      hint: 'Select building',
                       validator: (v) =>
-                          v == null ? 'Vui lòng chọn tòa nhà' : null,
+                          v == null ? 'Please select building' : null,
                     ),
                   ],
                   if (_floorOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<int>(
-                      label: 'Tầng *',
+                      label: 'Floor *',
                       icon: Icons.layers_rounded,
                       value: _selectedFloor,
                       items: _floorOptions,
-                      itemLabel: (v) => 'Tầng $v',
+                      itemLabel: (v) => 'Floor $v',
                       onChanged: _onFloorSelected,
-                      hint: 'Chọn tầng',
-                      validator: (v) => v == null ? 'Vui lòng chọn tầng' : null,
+                      hint: 'Select floor',
+                      validator: (v) => v == null ? 'Please select floor' : null,
                     ),
                   ],
                   if (_apartmentOptions.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildDropdown<String>(
-                      label: 'Số căn hộ *',
+                      label: 'Unit Number *',
                       icon: Icons.door_front_door_rounded,
                       value: _selectedApartmentNumber,
                       items: _apartmentOptions,
                       itemLabel: (v) => v,
                       onChanged: _onApartmentSelected,
-                      hint: 'Chọn số căn hộ',
+                      hint: 'Select unit',
                       validator: (v) =>
-                          v == null ? 'Vui lòng chọn căn hộ' : null,
+                          v == null ? 'Please select unit' : null,
                     ),
                   ],
                   if (_selectedUnit != null) ...[
@@ -650,33 +748,33 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   ],
                   const SizedBox(height: 28),
                   _buildSectionHeader(
-                      'Thông tin chủ sở hữu', Icons.person_outline_rounded),
+                      'Owner Information', Icons.person_outline_rounded),
                   const SizedBox(height: 12),
                   _buildTextField(
                     controller: _ownerNameCtrl,
-                    label: 'Tên chủ sở hữu *',
-                    hint: 'Nhập tên chủ sở hữu',
+                    label: 'Owner Name *',
+                    hint: 'Enter owner name',
                     icon: Icons.person_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Vui lòng nhập tên chủ sở hữu'
+                        ? 'Please enter owner name'
                         : null,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _ownerPhoneCtrl,
-                    label: 'Số điện thoại *',
-                    hint: 'Nhập số điện thoại chủ sở hữu',
+                    label: 'Phone Number *',
+                    hint: 'Enter owner phone number',
                     icon: Icons.phone_rounded,
                     keyboardType: TextInputType.phone,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Vui lòng nhập số điện thoại'
+                        ? 'Please enter phone number'
                         : null,
                   ),
                   const SizedBox(height: 16),
                   _buildCCCDImagePicker(),
                   const SizedBox(height: 28),
-                  _buildSectionHeader('Hình ảnh', Icons.photo_camera_rounded),
+                  _buildSectionHeader('Images', Icons.photo_camera_rounded),
                   const SizedBox(height: 12),
                   _buildImageUploadButton(),
                   const SizedBox(height: 36),
@@ -786,7 +884,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
 
   Widget _buildDropdown<T>({
     required String label,
-    required IconData icon,
+    IconData? icon,
     required T? value,
     required List<T> items,
     required String Function(T) itemLabel,
@@ -813,7 +911,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
         isExpanded: true,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: primaryBlue, size: 22),
+          prefixIcon: icon != null ? Icon(icon, color: primaryBlue, size: 22) : null,
           labelStyle:
               const TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
           border: InputBorder.none,
@@ -864,7 +962,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   color: primaryBlue, size: 18),
               const SizedBox(width: 8),
               Text(
-                'Thông tin địa chỉ',
+                'Address Information',
                 style: TextStyle(
                   color: primaryBlue,
                   fontWeight: FontWeight.w700,
@@ -874,8 +972,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          _locationRow('Phường/Xã', _selectedUnit!['commute'] ?? ''),
-          _locationRow('Quận/Huyện', _selectedUnit!['ward'] ?? ''),
+          _locationRow('Commune/Ward', _selectedUnit!['commute'] ?? ''),
+          _locationRow('District', _selectedUnit!['ward'] ?? ''),
         ],
       ),
     );
@@ -952,7 +1050,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Ảnh CCCD chủ sở hữu *',
+                      'Owner ID Images *',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -962,8 +1060,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     const SizedBox(height: 2),
                     Text(
                       _ownerCCCDImages.isEmpty
-                          ? 'Chọn ảnh mặt trước & mặt sau CCCD'
-                          : '${_ownerCCCDImages.length} ảnh đã chọn',
+                          ? 'Select front & back ID images'
+                          : '${_ownerCCCDImages.length} images selected',
                       style: TextStyle(
                         fontSize: 13,
                         color: _ownerCCCDImages.isNotEmpty
@@ -1052,7 +1150,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                           color: primaryBlue.withValues(alpha: 0.7), size: 28),
                       const SizedBox(height: 4),
                       Text(
-                        'Thêm ảnh',
+                        'Add image',
                         style: TextStyle(
                           fontSize: 11,
                           color: primaryBlue.withValues(alpha: 0.7),
@@ -1122,8 +1220,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     children: [
                       Text(
                         totalImages > 0
-                            ? '$totalImages ảnh đã chọn'
-                            : 'Thêm hình ảnh',
+                            ? '$totalImages images selected'
+                            : 'Add images',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -1133,8 +1231,8 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                       const SizedBox(height: 2),
                       Text(
                         totalImages > 0
-                            ? 'Nhấn để thay đổi'
-                            : 'Chọn ảnh bìa và ảnh chi tiết',
+                            ? 'Tap to change'
+                            : 'Select cover and detail images',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[500],
@@ -1180,7 +1278,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                                   ),
                                 ),
                                 child: const Text(
-                                  'Bìa',
+                                  'Cover',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white,
@@ -1240,7 +1338,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
               : () {
                   if (!_isApprovedUser) {
                     _showError(
-                      'Tài khoản chưa được Approved nên không thể đăng nhà',
+                      'Account not approved. Cannot post apartment',
                     );
                     return;
                   }
@@ -1265,7 +1363,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                     Icon(Icons.send_rounded, color: Colors.white, size: 22),
                     SizedBox(width: 12),
                     Text(
-                      'Đăng ngay',
+                      'Post Now',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,

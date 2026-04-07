@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -149,6 +149,21 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
       default:
         return status ?? 'Unknown';
     }
+  }
+
+  Widget _buildRoomBadge(dynamic value, String suffix) {
+    final v = value?.toString() ?? '0';
+    if (v == '0' || v == '0.0' || v.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(right: 6, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Text('$v $suffix', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+    );
   }
 
   @override
@@ -444,6 +459,18 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
+                            Wrap(
+                              children: [
+                                _buildRoomBadge(apartment?['bedRoom'], 'Phòng ngủ'),
+                                _buildRoomBadge(apartment?['livingRoom'], 'Phòng khách'),
+                                _buildRoomBadge(apartment?['diningRoom'], 'Phòng ăn'),
+                                _buildRoomBadge(apartment?['kitchen'], 'Bếp'),
+                                _buildRoomBadge(apartment?['bathRoom'], 'Phòng tắm'),
+                                if (apartment?['area'] != null && apartment?['area'].toString() != '0' && apartment?['area'].toString() != '0.0')
+                                  _buildRoomBadge(apartment?['area'], 'm²'),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
                             Wrap(
                               spacing: 8,
                               runSpacing: 6,

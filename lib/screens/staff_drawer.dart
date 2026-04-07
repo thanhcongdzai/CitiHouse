@@ -212,7 +212,7 @@ class StaffDrawer extends StatelessWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.verified_user_rounded),
-                    title: const Text('Approve tài khoản'),
+                    title: const Text('Approve Accounts'),
                     onTap: () => goTo(
                       StaffApprovalScreen(
                         currentUser: currentUser,
@@ -222,7 +222,7 @@ class StaffDrawer extends StatelessWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.image_rounded),
-                    title: const Text('Duyệt hình ảnh'),
+                    title: const Text('Approve Images'),
                     onTap: () => goTo(
                       ImageApprovalStaffScreen(
                         currentUser: currentUser,
@@ -232,7 +232,7 @@ class StaffDrawer extends StatelessWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.gavel_rounded),
-                    title: const Text('Duyệt pháp lý'),
+                    title: const Text('Approve Legal Documents'),
                     onTap: () => goTo(
                       LegalApprovalStaffScreen(
                         currentUser: currentUser,
@@ -242,7 +242,7 @@ class StaffDrawer extends StatelessWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.verified_user_rounded),
-                    title: const Text('Duyệt chủ nhà'),
+                    title: const Text('Approve Owners'),
                     onTap: () => goTo(
                       OwnerApprovalStaffScreen(
                         currentUser: currentUser,
@@ -252,7 +252,7 @@ class StaffDrawer extends StatelessWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.event_available_rounded),
-                    title: const Text('Xử lý lịch hẹn xem nhà'),
+                    title: const Text('Process Viewing Appointments'),
                     onTap: () => goTo(
                       OnSiteStaffScreen(
                         currentUser: currentUser,
@@ -281,7 +281,7 @@ class StaffDrawer extends StatelessWidget {
                           : Colors.black87,
                     ),
                     title: Text(
-                      'Phê duyệt đăng ký',
+                      'Registration Approvals',
                       style: TextStyle(
                         fontWeight: isRegistrationApprovalsSelected
                             ? FontWeight.bold
@@ -311,7 +311,7 @@ class StaffDrawer extends StatelessWidget {
                           : Colors.black87,
                     ),
                     title: Text(
-                      'Kích hoạt tài khoản',
+                      'Account Activation',
                       style: TextStyle(
                         fontWeight: isAccountActivationSelected
                             ? FontWeight.bold

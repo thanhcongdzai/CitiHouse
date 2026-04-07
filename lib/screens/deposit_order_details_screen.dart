@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'dart:convert';
@@ -275,6 +275,79 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Highlighted Deposit Amount Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [primaryBlue, primaryBlue.withOpacity(0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryBlue.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'SỐ TIỀN CỌC',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _formatCurrency(widget.deposit['depositAmount']),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isPending ? Icons.pending_actions_rounded : Icons.check_circle_outline_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isPending ? 'Chờ duyệt' : status.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+
                 // Apartment Info Card
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -283,11 +356,12 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withOpacity(0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
+                    border: Border.all(color: Colors.grey.shade100),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,12 +369,12 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: primaryBlue.withOpacity(0.1),
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Icon(Icons.apartment_rounded, color: primaryBlue),
+                            child: const Icon(Icons.apartment_rounded, color: primaryBlue, size: 24),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -326,7 +400,7 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      const Divider(height: 1),
+                      const Divider(height: 1, color: Color(0xFFF3F4F6)),
                       const SizedBox(height: 20),
                       
                       const Text(
@@ -339,11 +413,9 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                       ),
                       const SizedBox(height: 16),
                       
-                      _buildDetailRow('Số tiền cọc:', _formatCurrency(widget.deposit['depositAmount']), isHighlight: true),
                       _buildDetailRow('Ngày tạo:', _formatDate(widget.deposit['createdAt']?.toString())),
                       _buildDetailRow('Hạn chót thanh toán:', _formatDate(widget.deposit['expiredAt']?.toString())),
-                      _buildDetailRow('Ghi chú:', widget.deposit['notes']?.toString() ?? 'None'),
-                      _buildDetailRow('Trạng thái:', status.toString()),
+                      _buildDetailRow('Ghi chú:', widget.deposit['notes']?.toString() ?? 'Không có'),
                     ],
                   ),
                 ),
@@ -358,11 +430,12 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withOpacity(0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
+                    border: Border.all(color: Colors.grey.shade100),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,28 +550,41 @@ class _DepositOrderDetailsScreenState extends State<DepositOrderDetailsScreen> {
               right: 0,
               bottom: 0,
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
+                      blurRadius: 20,
                       offset: const Offset(0, -5),
                     ),
                   ],
                 ),
-                child: SizedBox(
+                child: Container(
                   height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [primaryBlue, primaryBlue.withOpacity(0.8)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryBlue.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _approveDeposit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryBlue,
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      elevation: 0,
                     ),
                     child: _isLoading
                         ? const SizedBox(

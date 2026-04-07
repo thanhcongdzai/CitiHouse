@@ -101,17 +101,17 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          'Xác nhận phê duyệt',
+          'Confirm Approval',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         content: Text(
-          'Bạn có chắc muốn phê duyệt tài khoản "$name" không?',
+          'Are you sure you want to approve the account "$name"?',
           style: const TextStyle(height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -122,7 +122,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Xác nhận'),
+            child: const Text('Confirm'),
           ),
         ],
       ),
@@ -151,7 +151,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã duyệt tài khoản $name'),
+            content: Text('Account approved: $name'),
             backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
             shape:
@@ -163,7 +163,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi: ${response.statusCode}'),
+            content: Text('Error: ${response.statusCode}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -189,11 +189,11 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          'Confirm từ chối',
+          'Confirm Rejection',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         content: Text(
-          'Bạn có chắc muốn từ chối và xóa tài khoản của "$name" không?\n\nHành động này không thể hoàn tác!',
+          'Are you sure you want to reject and delete the account "$name"?\n\nThis action cannot be undone!',
           style: const TextStyle(height: 1.5),
         ),
         actions: [
@@ -210,7 +210,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Từ Chối & Xóa'),
+            child: const Text('Reject & Delete'),
           ),
         ],
       ),
@@ -225,7 +225,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Từ chối và xóa tài khoản "$name"'),
+            content: Text('Reject and delete account "$name"'),
             backgroundColor: Colors.red[600],
             behavior: SnackBarBehavior.floating,
             shape:
@@ -237,7 +237,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi xóa: ${response.statusCode}'),
+            content: Text('Delete error: ${response.statusCode}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -272,18 +272,18 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
 
   String get _screenTitle =>
       _selectedTab == StaffApprovalTab.registrationApproval
-          ? 'Phê duyệt đăng ký'
-          : 'Kích hoạt tài khoản';
+          ? 'Registration Approvals'
+          : 'Account Activation';
 
   String get _emptyTitle =>
       _selectedTab == StaffApprovalTab.registrationApproval
-          ? 'Không có tài khoản chờ duyệt'
-          : 'Không có tài khoản cần kích hoạt';
+          ? 'No accounts pending approval'
+          : 'No accounts pending activation';
 
   String get _emptySubtitle =>
       _selectedTab == StaffApprovalTab.registrationApproval
-          ? 'Tất cả tài khoản đã được xử lý.'
-          : 'Chưa có người dùng nào tải ảnh căn cước.';
+          ? 'All accounts have been processed.'
+          : 'No users have uploaded ID images.';
 
   @override
   Widget build(BuildContext context) {
@@ -507,11 +507,11 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
             const SizedBox(height: 8),
             _buildInfoRow(Icons.email_outlined, email),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.badge_outlined, 'CMND/CCCD: $cccd'),
+            _buildInfoRow(Icons.badge_outlined, 'ID: $cccd'),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.calendar_today_rounded, 'Ngày sinh: $dob'),
+            _buildInfoRow(Icons.calendar_today_rounded, 'DOB: $dob'),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.person_outline_rounded, 'Giới tính: $gender'),
+            _buildInfoRow(Icons.person_outline_rounded, 'Gender: $gender'),
             if (_selectedTab == StaffApprovalTab.accountActivation) ...[
               const SizedBox(height: 20),
               SizedBox(
@@ -521,7 +521,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                   onPressed: () => _openCccdImages(user),
                   icon: const Icon(Icons.credit_card_rounded, size: 18),
                   label: const Text(
-                    'Xem căn cước',
+                    'View ID',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -550,7 +550,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                         size: 18,
                       ),
                       label: const Text(
-                        'Phê duyệt',
+                        'Approve',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -575,7 +575,7 @@ class _StaffApprovalScreenState extends State<StaffApprovalScreen> {
                       onPressed: () => _rejectUser(user),
                       icon: const Icon(Icons.cancel_outlined, size: 18),
                       label: const Text(
-                        'Từ chối',
+                        'Reject',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -661,8 +661,8 @@ class _CccdImageViewerScreenState extends State<CccdImageViewerScreen> {
         foregroundColor: Colors.white,
         title: Text(
           widget.userName.isEmpty
-              ? 'Ảnh căn cước'
-              : 'Căn cước - ${widget.userName}',
+              ? 'ID Images'
+              : 'ID - ${widget.userName}',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),

@@ -106,7 +106,7 @@ class _ApartmentImagesScreenState extends State<ApartmentImagesScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Upload staff image thành công'),
+            content: Text('Upload verified image successfully'),
             backgroundColor: Colors.green,
           ),
         );

@@ -18,6 +18,12 @@ class Apartment {
   final Map<String, dynamic>? verifications;
   final String? postedBy;
   final Map<String, dynamic>? owner;
+  final int bedRoom;
+  final int livingRoom;
+  final int diningRoom;
+  final int kitchen;
+  final int bathRoom;
+  final double? area;
 
   Apartment({
     required this.id,
@@ -39,6 +45,12 @@ class Apartment {
     this.verifications,
     this.postedBy,
     this.owner,
+    this.bedRoom = 0,
+    this.livingRoom = 0,
+    this.diningRoom = 0,
+    this.kitchen = 0,
+    this.bathRoom = 0,
+    this.area,
   });
 
   static String _parseImageUrl(dynamic value) {
@@ -65,6 +77,14 @@ class Apartment {
       if (numberInt != null) return int.tryParse(numberInt) ?? 0;
     }
     return int.tryParse(value.toString().trim()) ?? 0;
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value.trim()) ?? 0.0;
+    return double.tryParse(value.toString().trim()) ?? 0.0;
   }
 
   factory Apartment.fromJson(Map<String, dynamic> json) {
@@ -94,6 +114,12 @@ class Apartment {
       owner: json['owner'] is Map
           ? Map<String, dynamic>.from(json['owner'] as Map)
           : null,
+      bedRoom: _parseInt(json['bedRoom']),
+      livingRoom: _parseInt(json['livingRoom']),
+      diningRoom: _parseInt(json['diningRoom']),
+      kitchen: _parseInt(json['kitchen']),
+      bathRoom: _parseInt(json['bathRoom']),
+      area: _parseDouble(json['area']),
     );
   }
 }

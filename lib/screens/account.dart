@@ -89,7 +89,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Cập nhật thông tin thành công'),
+        content: Text('Information updated successfully'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -271,14 +271,14 @@ class _AccountScreenState extends State<AccountScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _statItem(
-                                '0', 'Đã đăng', Icons.home_work_outlined),
+                                '0', 'Posted', Icons.home_work_outlined),
                             _vDivider(),
-                            _statItem('0', 'Đã lưu', Icons.bookmark_outline),
+                            _statItem('0', 'Saved', Icons.bookmark_outline),
                             _vDivider(),
                             _statItem(
-                                '0', 'Hợp đồng', Icons.description_outlined),
+                                '0', 'Contracts', Icons.description_outlined),
                             _vDivider(),
-                            _statItem('-', 'Đánh giá', Icons.star_outline),
+                            _statItem('-', 'Reviews', Icons.star_outline),
                           ],
                         ),
                       ),
@@ -294,19 +294,19 @@ class _AccountScreenState extends State<AccountScreen> {
             _sectionCard(
               child: Column(
                 children: [
-                  _infoRow(Icons.phone_android_rounded, 'Số điện thoại',
+                  _infoRow(Icons.phone_android_rounded, 'Phone Number',
                       _displayValue(user.phone), Colors.teal),
                   _divider(),
-                  _infoRow(Icons.cake_outlined, 'Ngày sinh',
+                  _infoRow(Icons.cake_outlined, 'Date of Birth',
                       _displayValue(_dob), Colors.orange),
                   _divider(),
-                  _infoRow(Icons.badge_outlined, 'CCCD',
+                  _infoRow(Icons.badge_outlined, 'ID Card',
                       _displayValue(user.cccd), Colors.indigo),
                   _divider(),
-                  _infoRow(Icons.person_outline_rounded, 'Giới tính',
+                  _infoRow(Icons.person_outline_rounded, 'Gender',
                       _displayValue(_gender), Colors.pink),
                   _divider(),
-                  _infoRow(Icons.home_outlined, 'Địa chỉ',
+                  _infoRow(Icons.home_outlined, 'Address',
                       _displayValue(_address), Colors.green),
                 ],
               ),
@@ -318,13 +318,13 @@ class _AccountScreenState extends State<AccountScreen> {
             _sectionCard(
               child: Column(
                 children: [
-                  _sectionHeader('Giao dịch của tôi', 'Xem tất cả'),
+                  _sectionHeader('My Transactions', 'View All'),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _orderStatus(
-                          context, Icons.pending_outlined, 'Chờ thanh toán', primary,
+                          context, Icons.pending_outlined, 'Pending', primary,
                           onTap: () {
                         Navigator.push(
                           context,
@@ -335,7 +335,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         ).then((_) => _fetchDepositOrderCount());
                       }, badgeCount: _depositOrderCount),
                       _orderStatus(context, Icons.check_circle_outline,
-                          'Đã thanh toán', primary, onTap: () {
+                          'Paid', primary, onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -345,7 +345,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         );
                       }),
                       _orderStatus(
-                          context, Icons.cancel_outlined, 'Đã hủy', primary),
+                          context, Icons.cancel_outlined, 'Cancelled', primary),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -360,10 +360,10 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Column(
                 children: [
                   _menuTile(Icons.favorite_border_outlined, Colors.redAccent,
-                      'Bất động sản đã cọc', 'Danh sách hoàn tất cọc'),
+                      'Deposited Properties', 'Completed deposit list'),
                   _divider(),
                   _menuTile(Icons.calendar_month_outlined, Colors.teal,
-                      'Lịch hẹn của tôi', 'Lịch hẹn và lịch sử', onTap: () {
+                      'My Appointments', 'Appointments and history', onTap: () {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -372,7 +372,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   }),
                   _divider(),
                   _menuTile(Icons.home_work_outlined, Colors.indigo,
-                      'Bất động sản đã đăng', 'Quản lý bất động sản đã đăng', onTap: () {
+                      'Posted Properties', 'Manage posted properties', onTap: () {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -381,7 +381,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   }),
                   _divider(),
                   _menuTile(Icons.notifications_outlined, secondary,
-                      'Cập nhật thông tin', 'Cập nhật thông tin cá nhân',
+                      'Update Information', 'Update personal information',
                       onTap: _openMyInformations),
                 ],
               ),
@@ -402,7 +402,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   child: const Icon(Icons.logout, color: Colors.red, size: 22),
                 ),
-                title: const Text('Đăng xuất',
+                title: const Text('Log Out',
                     style: TextStyle(
                         color: Colors.red, fontWeight: FontWeight.w700)),
                 trailing: const Icon(Icons.chevron_right,
@@ -421,8 +421,8 @@ class _AccountScreenState extends State<AccountScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Đăng xuất'),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
@@ -500,7 +500,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               child: const Row(
                 children: [
-                  Text('Xem tất cả',
+                  Text('View All',
                       style: TextStyle(
                           color: primary,
                           fontSize: 12,
@@ -747,13 +747,13 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cập nhật thất bại: ${response.statusCode}')),
+          SnackBar(content: Text('Update failed: ${response.statusCode}')),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e')),
+        SnackBar(content: Text('Error: $e')),
       );
     } finally {
       if (mounted) {
@@ -771,7 +771,7 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        title: const Text('Cập nhật thông tin', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Update Information', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
         iconTheme: const IconThemeData(color: Colors.black87),
         centerTitle: true,
       ),
@@ -782,22 +782,22 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildSectionHeader('Thông tin cá nhân', Icons.person_outline),
+              _buildSectionHeader('Personal Information', Icons.person_outline),
               Row(
                 children: [
                   Expanded(
                     child: TextFormField(
                       controller: _firstNameController,
-                      decoration: _inputDecoration('Tên', prefixIcon: Icons.badge_outlined),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                      decoration: _inputDecoration('First Name', prefixIcon: Icons.badge_outlined),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _lastNameController,
-                      decoration: _inputDecoration('Họ'),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                      decoration: _inputDecoration('Last Name'),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                   ),
                 ],
@@ -809,7 +809,7 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
                     child: TextFormField(
                       controller: _dobController,
                       readOnly: true,
-                      decoration: _inputDecoration('Ngày sinh', prefixIcon: Icons.calendar_today_outlined),
+                      decoration: _inputDecoration('Date of Birth', prefixIcon: Icons.calendar_today_outlined),
                       onTap: () async {
                         DateTime? initialDate;
                         try {
@@ -829,7 +829,7 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
                           _dobController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
                         }
                       },
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -843,48 +843,48 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
                       }(),
                       decoration: _inputDecoration('Gender', prefixIcon: Icons.transgender_outlined),
                       items: const [
-                        DropdownMenuItem(value: 'Male', child: Text('Nam')),
-                        DropdownMenuItem(value: 'Female', child: Text('Nữ')),
+                        DropdownMenuItem(value: 'Male', child: Text('Male')),
+                        DropdownMenuItem(value: 'Female', child: Text('Female')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
                           _genderController.text = val;
                         }
                       },
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                   ),
                 ],
               ),
               
-              _buildSectionHeader('Thông tin liên lạc', Icons.contact_mail_outlined),
+              _buildSectionHeader('Contact Information', Icons.contact_mail_outlined),
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: _inputDecoration('Email', prefixIcon: Icons.email_outlined),
                 validator: (v) {
                   final value = v?.trim() ?? '';
-                  if (value.isEmpty) return 'Bắt buộc';
-                  if (!_emailRegex.hasMatch(value)) return 'Email không hợp lệ';
+                  if (value.isEmpty) return 'Required';
+                  if (!_emailRegex.hasMatch(value)) return 'Invalid email';
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _addressController,
-                decoration: _inputDecoration('Địa chỉ', prefixIcon: Icons.home_outlined),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+                decoration: _inputDecoration('Address', prefixIcon: Icons.home_outlined),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
 
-              _buildSectionHeader('CCCD', Icons.assignment_ind_outlined),
+              _buildSectionHeader('ID Card', Icons.assignment_ind_outlined),
               _uploadTile(
-                title: 'CCCD Mặt Trước',
+                title: 'ID Card Front',
                 file: _cccdFrontImage,
                 onTap: () => _pickImage(true),
               ),
               const SizedBox(height: 12),
               _uploadTile(
-                title: 'CCCD Mặt Sau',
+                title: 'ID Card Back',
                 file: _cccdBackImage,
                 onTap: () => _pickImage(false),
               ),
@@ -1030,7 +1030,7 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    file != null ? 'Đã chọn ảnh' : 'Nhấn để tải ảnh lên',
+                    file != null ? 'Image selected' : 'Tap to upload image',
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
