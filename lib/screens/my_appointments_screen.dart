@@ -47,6 +47,12 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
           return extractedId == widget.userId;
         }).toList();
 
+        filtered.sort((a, b) {
+          final dateA = DateTime.tryParse(a['requestedAt'] ?? a['createdAt'] ?? a['appointmentTime'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final dateB = DateTime.tryParse(b['requestedAt'] ?? b['createdAt'] ?? b['appointmentTime'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return dateB.compareTo(dateA);
+        });
+
         setState(() {
           _appointments = filtered;
           _isLoading = false;
@@ -67,7 +73,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
       case 'dang xem': return Colors.orange;
       case 'hoan thanh': return Colors.teal;
       case 'da yeu cau coc': return Colors.purple;
-      case 'huy': return Colors.red;
+      case 'da huy lich': return Colors.red;
       default: return Colors.grey;
     }
   }
@@ -80,7 +86,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
       case 'dang xem': return Icons.visibility_rounded;
       case 'hoan thanh': return Icons.task_alt_rounded;
       case 'da yeu cau coc': return Icons.monetization_on_rounded;
-      case 'huy': return Icons.cancel_outlined;
+      case 'da huy lich': return Icons.cancel_outlined;
       default: return Icons.info_outline;
     }
   }
@@ -93,7 +99,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
       case 'dang xem': return 'Đang xem';
       case 'hoan thanh': return 'Hoàn thành';
       case 'da yeu cau coc': return 'Đã yêu cầu cọc';
-      case 'huy': return 'Huỷ';
+      case 'da huy lich': return 'Đã hủy lịch';
       default: return status;
     }
   }
@@ -103,7 +109,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
-        title: const Text('Lịch hẹn của tôi', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Booked appointments', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -225,7 +231,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                         Text(
                           apptTime != null
                               ? DateFormat('EEE, dd MMM yyyy – HH:mm').format(apptTime)
-                              : appt['appointmentTime'] ?? '-',
+                              : (appt['appointmentTime'] == null || appt['appointmentTime'].toString().isEmpty)
+                                  ? 'Waiting for confirm'
+                                  : appt['appointmentTime'],
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                         ),
                       ],

@@ -363,7 +363,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       'Deposited Properties', 'Completed deposit list'),
                   _divider(),
                   _menuTile(Icons.calendar_month_outlined, Colors.teal,
-                      'My Appointments', 'Appointments and history', onTap: () {
+                      'Booked Appointments', 'Appointments and history', onTap: () {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -877,17 +877,44 @@ class _MyInformationsScreenState extends State<_MyInformationsScreen> {
               ),
 
               _buildSectionHeader('ID Card', Icons.assignment_ind_outlined),
-              _uploadTile(
-                title: 'ID Card Front',
-                file: _cccdFrontImage,
-                onTap: () => _pickImage(true),
-              ),
-              const SizedBox(height: 12),
-              _uploadTile(
-                title: 'ID Card Back',
-                file: _cccdBackImage,
-                onTap: () => _pickImage(false),
-              ),
+              if (widget.user.status == 'Approved')
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.verified_user_outlined, color: Colors.green, size: 28),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Tài khoản đã xác minh',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                _uploadTile(
+                  title: 'ID Card Front',
+                  file: _cccdFrontImage,
+                  onTap: () => _pickImage(true),
+                ),
+                const SizedBox(height: 12),
+                _uploadTile(
+                  title: 'ID Card Back',
+                  file: _cccdBackImage,
+                  onTap: () => _pickImage(false),
+                ),
+              ],
               
               const SizedBox(height: 32),
               SizedBox(

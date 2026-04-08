@@ -55,8 +55,15 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
 
         // Fetch apartment and user info concurrently for each appointment
         final enriched = await Future.wait(appointments.map((appt) async {
-          final apartmentId = appt['apartmentId']?.toString() ?? '';
-          final userId = appt['userId']?.toString() ?? '';
+          final aptIdRaw = appt['apartmentId'];
+          final apartmentId = (aptIdRaw is Map && aptIdRaw.containsKey('\$oid'))
+              ? aptIdRaw['\$oid']?.toString() ?? ''
+              : aptIdRaw?.toString() ?? '';
+
+          final userIdRaw = appt['userId'];
+          final userId = (userIdRaw is Map && userIdRaw.containsKey('\$oid'))
+              ? userIdRaw['\$oid']?.toString() ?? ''
+              : userIdRaw?.toString() ?? '';
 
           Map<String, dynamic>? apartmentData;
           Map<String, dynamic>? userData;
@@ -124,7 +131,7 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         return Colors.purple;
       case 'Hoan thanh':
         return Colors.green;
-      case 'Huy':
+      case 'Da huy lich':
         return Colors.red;
       default:
         return Colors.grey;
@@ -144,8 +151,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         return 'Viewing';
       case 'Hoan thanh':
         return 'Completed';
-      case 'Huy':
-        return 'Đã hủy';
+      case 'Da huy lich':
+        return 'Cancelled';
       default:
         return status ?? 'Unknown';
     }
@@ -177,13 +184,16 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         // Hiện có: staffInCharge is null or empty
         return staffInCharge == null || staffInCharge.isEmpty;
       } else if (_selectedTab == 1) {
-        // Accepted: Assigned to me, NOT Hoan thanh or Da yeu cau coc
+        // Accepted: Assigned to me, NOT Hoan thanh, Da yeu cau coc, Da huy lich or Huy
         return staffInCharge == widget.currentUser.id &&
             status != 'Hoan thanh' &&
-            status != 'Da yeu cau coc';
+            status != 'Da yeu cau coc' &&
+            status != 'Da huy lich' &&
+            status != 'Huy';
       } else if (_selectedTab == 2) {
-        // Đã hoàn thành: Assigned to me AND status is Hoan thanh only
-        return staffInCharge == widget.currentUser.id && status == 'Hoan thanh';
+        // Đã hoàn thành / Hủy: Assigned to me AND status is Hoan thanh or cancelled
+        return staffInCharge == widget.currentUser.id && 
+            (status == 'Hoan thanh' || status == 'Da huy lich' || status == 'Huy');
       } else if (_selectedTab == 3) {
         // Deposit Requested: Assigned to me AND Da yeu cau coc
         return staffInCharge == widget.currentUser.id &&
@@ -345,8 +355,8 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         customerPhone != userPhone;
 
     final userName = user != null
-        ? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim()
-        : appt['userId']?.toString() ?? 'Unknown';
+        ? (user['fullName']?.toString() ?? user['name']?.toString() ?? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}').trim()
+        : (appt['userId'] is Map ? appt['userId']['\$oid']?.toString() ?? 'Unknown' : appt['userId']?.toString() ?? 'Unknown');
 
     final customerName = customer?['name']?.toString() ?? '';
     final aptTitle =
@@ -361,11 +371,17 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: isMine
-            ? LinearGradient(
-                colors: [Colors.greenAccent.shade400, Colors.green.shade600],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
+            ? (status == 'Da huy lich' || status == 'Huy')
+                ? LinearGradient(
+                    colors: [Colors.redAccent.shade200, Colors.red.shade600],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : LinearGradient(
+                    colors: [Colors.greenAccent.shade400, Colors.green.shade600],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
             : LinearGradient(
                 colors: [
                   primaryBlue.withOpacity(0.4),
@@ -377,7 +393,9 @@ class _OnSiteStaffScreenState extends State<OnSiteStaffScreen> {
         boxShadow: [
           if (isMine)
             BoxShadow(
-              color: Colors.green.withOpacity(0.4),
+              color: (status == 'Da huy lich' || status == 'Huy')
+                  ? Colors.red.withOpacity(0.4)
+                  : Colors.green.withOpacity(0.4),
               blurRadius: 16,
               spreadRadius: 2,
               offset: const Offset(0, 4),

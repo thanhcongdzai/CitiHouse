@@ -774,7 +774,7 @@ class _PostApartmentScreenState extends State<PostApartmentScreen> {
                   const SizedBox(height: 16),
                   _buildCCCDImagePicker(),
                   const SizedBox(height: 28),
-                  _buildSectionHeader('Images', Icons.photo_camera_rounded),
+                  _buildSectionHeader('Apartment Images', Icons.photo_camera_rounded),
                   const SizedBox(height: 12),
                   _buildImageUploadButton(),
                   const SizedBox(height: 36),

@@ -68,31 +68,70 @@ class _MyPostedApartmentsScreenState extends State<MyPostedApartmentsScreen> {
     return '${amount.toString().replaceAllMapped(formatter, (m) => '.')} đ';
   }
 
+  String _formatStatus(String status) {
+    if (status == 'inContract') return 'In Contract';
+    if (status == 'available') return 'Available';
+    if (status.toLowerCase() == 'rejected') return 'Rejected';
+    if (status.toLowerCase() == 'pending') return 'Pending';
+    return status.isNotEmpty ? status : 'Pending';
+  }
+
+  Color _getStatusColor(String status) {
+    if (status == 'inContract') return Colors.blue;
+    if (status == 'available') return Colors.green;
+    if (status.toLowerCase() == 'rejected') return Colors.red;
+    return Colors.black.withOpacity(0.6);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgBottom,
-      appBar: AppBar(
-        title: const Text(
-          'Các căn hộ đã đăng',
-          style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w800, fontSize: 20),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: primaryBlue),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _fetchMyApartments,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: bgBottom,
+        appBar: AppBar(
+          title: const Text(
+            'My posted apartment',
+            style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w800, fontSize: 20),
           ),
-          const SizedBox(width: 8),
-        ],
+          backgroundColor: Colors.white,
+          elevation: 0,
+          titleSpacing: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            onPressed: () => Navigator.pop(context),
+          ),
+          iconTheme: const IconThemeData(color: primaryBlue),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: _fetchMyApartments,
+            ),
+            const SizedBox(width: 8),
+          ],
+          bottom: const TabBar(
+            labelColor: primaryBlue,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: primaryBlue,
+            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 15),
+            tabs: [
+              Tab(text: 'My List'),
+              Tab(text: 'Rejected'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildBody(showRejected: false),
+            _buildBody(showRejected: true),
+          ],
+        ),
       ),
-      body: _buildBody(),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody({required bool showRejected}) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator(color: primaryBlue));
     }
@@ -117,7 +156,12 @@ class _MyPostedApartmentsScreenState extends State<MyPostedApartmentsScreen> {
       );
     }
 
-    if (_myApartments.isEmpty) {
+    final filteredList = _myApartments.where((apt) {
+      final isAptRejected = apt.houseStatus.toLowerCase() == 'rejected';
+      return showRejected ? isAptRejected : !isAptRejected;
+    }).toList();
+
+    if (filteredList.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -128,9 +172,9 @@ class _MyPostedApartmentsScreenState extends State<MyPostedApartmentsScreen> {
               child: Icon(Icons.home_work_outlined, size: 72, color: Colors.blue[400]),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Bạn chưa đăng căn hộ nào',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
+            Text(
+              showRejected ? 'Không có căn hộ bị từ chối' : 'Bạn chưa đăng căn hộ nào',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
             ),
           ],
         ),
@@ -142,9 +186,9 @@ class _MyPostedApartmentsScreenState extends State<MyPostedApartmentsScreen> {
       color: primaryBlue,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _myApartments.length,
+        itemCount: filteredList.length,
         itemBuilder: (context, index) {
-          final apt = _myApartments[index];
+          final apt = filteredList[index];
           
           const sampleImage = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&auto=format&fit=crop&q=60';
           final String firstImage = apt.imageUrl.split(',').first.trim();
@@ -184,11 +228,11 @@ class _MyPostedApartmentsScreenState extends State<MyPostedApartmentsScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
+                            color: _getStatusColor(apt.houseStatus),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            apt.houseStatus.isNotEmpty ? apt.houseStatus : 'Pending',
+                            _formatStatus(apt.houseStatus),
                             style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),

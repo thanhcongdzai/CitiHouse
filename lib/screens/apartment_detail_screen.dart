@@ -646,7 +646,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                     ),
                   ),
                   child: const Text(
-                    'Yêu cầu xem nhà',
+                    'Book a tour',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -753,11 +753,11 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
           children: [
             Expanded(
                 child: _buildGridItem(
-                    'Dự án', widget.apartment.project, Icons.apartment)),
+                    'Project', widget.apartment.project, Icons.apartment)),
             const SizedBox(width: 16),
             Expanded(
                 child: _buildGridItem(
-                    'Tòa nhà', widget.apartment.building, Icons.domain)),
+                    'Building', widget.apartment.building, Icons.domain)),
           ],
         ),
         const SizedBox(height: 16),
@@ -765,10 +765,10 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
           children: [
             Expanded(
                 child: _buildGridItem(
-                    'Tầng', widget.apartment.floor.toString(), Icons.layers)),
+                    'Floor', widget.apartment.floor.toString(), Icons.layers)),
             const SizedBox(width: 16),
             Expanded(
-                child: _buildGridItem('Mã căn',
+                child: _buildGridItem('Apt. Number',
                     widget.apartment.displayCode, Icons.door_front_door)),
           ],
         ),
@@ -776,11 +776,11 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
         Row(
           children: [
             Expanded(
-                child: _buildGridItem('Phòng ngủ',
+                child: _buildGridItem('Bed Room',
                     widget.apartment.bedRoom.toString(), Icons.bed)),
             const SizedBox(width: 16),
             Expanded(
-                child: _buildGridItem('Phòng khách',
+                child: _buildGridItem('Living Room',
                     widget.apartment.livingRoom.toString(), Icons.weekend)),
           ],
         ),
@@ -788,11 +788,11 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
         Row(
           children: [
             Expanded(
-                child: _buildGridItem('Phòng ăn',
+                child: _buildGridItem('Dining Room',
                     widget.apartment.diningRoom.toString(), Icons.dining)),
             const SizedBox(width: 16),
             Expanded(
-                child: _buildGridItem('Phòng bếp',
+                child: _buildGridItem('Kitchen',
                     widget.apartment.kitchen.toString(), Icons.kitchen)),
           ],
         ),
@@ -800,11 +800,11 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
         Row(
           children: [
             Expanded(
-                child: _buildGridItem('Phòng tắm',
+                child: _buildGridItem('Bath Room',
                     widget.apartment.bathRoom.toString(), Icons.bathtub)),
             const SizedBox(width: 16),
             Expanded(
-                child: _buildGridItem('Diện tích',
+                child: _buildGridItem('Area Square',
                     (widget.apartment.area != null && widget.apartment.area! > 0) ? '${widget.apartment.area} m²' : '0', Icons.square_foot)),
           ],
         ),

@@ -40,6 +40,48 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
   void initState() {
     super.initState();
     _appt = Map<String, dynamic>.from(widget.appointment);
+    if (_appt['_user'] == null) {
+      _fetchUser();
+    }
+    if (_appt['_apartment'] == null) {
+      _fetchApartment();
+    }
+  }
+
+  Future<void> _fetchApartment() async {
+    final aptIdRaw = _appt['apartmentId'];
+    final apartmentId = (aptIdRaw is Map && aptIdRaw.containsKey('\$oid'))
+        ? aptIdRaw['\$oid']?.toString() ?? ''
+        : aptIdRaw?.toString() ?? '';
+
+    if (apartmentId.isNotEmpty) {
+      try {
+        final res = await http.get(ApiConfig.uri('/api/apartments/$apartmentId/'));
+        if (res.statusCode == 200 && mounted) {
+          setState(() {
+            _appt['_apartment'] = json.decode(utf8.decode(res.bodyBytes));
+          });
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _fetchUser() async {
+    final userIdRaw = _appt['userId'];
+    final userId = (userIdRaw is Map && userIdRaw.containsKey('\$oid'))
+        ? userIdRaw['\$oid']?.toString() ?? ''
+        : userIdRaw?.toString() ?? '';
+
+    if (userId.isNotEmpty) {
+      try {
+        final res = await http.get(ApiConfig.uri('/api/users/$userId/'));
+        if (res.statusCode == 200 && mounted) {
+          setState(() {
+            _appt['_user'] = json.decode(utf8.decode(res.bodyBytes));
+          });
+        }
+      } catch (_) {}
+    }
   }
 
   bool _isUpdatingStatus = false;
@@ -180,8 +222,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
           SnackBar(
             content: Text(
               fieldKey == 'viewingImage'
-                  ? 'Đã upload viewing image'
-                  : 'Đã upload complete image',
+                  ? 'Viewing image uploaded'
+                  : 'Complete image uploaded',
             ),
             backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
@@ -340,7 +382,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     if (_selectedAppointmentDateTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui lòng chọn ngày giờ trước khi bấm OK'),
+          content: Text('Please select a date and time before clicking OK'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -377,7 +419,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Đã cập nhật thời gian hẹn và trạng thái'),
+            content: const Text('Updated appointment time and status'),
             backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
           ),
@@ -386,7 +428,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi cập nhật thời gian: ${response.statusCode}'),
+            content: Text('Error updating time: ${response.statusCode}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -395,7 +437,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi kết nối: $e'),
+          content: Text('Error updating time: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -435,7 +477,71 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('✅ Đã cập nhật trạng thái!'),
+              content: const Text('Updated status!'),
+              backgroundColor: Colors.green[600],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error updating: ${response.statusCode}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Lỗi kết nối: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingStatus = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _cancelAppointment(String reason) async {
+    final id = _appointmentId();
+    if (id.isEmpty) return;
+
+    setState(() {
+      _isUpdatingStatus = true;
+    });
+
+    try {
+      final updated = Map<String, dynamic>.from(_appt)
+        ..remove('_apartment')
+        ..remove('_user');
+      updated['status'] = 'Da huy lich';
+      updated['lyDoHuyLich'] = reason;
+
+      final response = await http.put(
+        ApiConfig.uri('/api/viewing-appointments/$id/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updated),
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            _appt['status'] = 'Da huy lich';
+            _appt['lyDo'] = reason;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Cancel appointment successfully!'),
               backgroundColor: Colors.green[600],
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -470,6 +576,59 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     }
   }
 
+  void _showCancelDialog() {
+    final reasonController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel appointment', style: TextStyle(color: Colors.red)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Are you sure you want to cancel this appointment?'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                labelText: 'Reason',
+                hintText: 'Enter reason...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final reason = reasonController.text.trim();
+              if (reason.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter a reason'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              Navigator.pop(context);
+              _cancelAppointment(reason);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Confirm Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showStatusConfirmation(String newStatus) {
     if (newStatus == _appt['status']) return; // No change
 
@@ -484,13 +643,13 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận cập nhật'),
+        title: const Text('Confirm update'),
         content:
-            Text('Bạn có chắc chắn muốn chuyển trạng thái?'),
+            Text('Are you sure you want to update the status?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -503,7 +662,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
             },
             style: ElevatedButton.styleFrom(
                 backgroundColor: primaryBlue, foregroundColor: Colors.white),
-            child: const Text('Xác nhận'),
+            child: const Text('Confirm'),
           ),
         ],
       ),
@@ -573,7 +732,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Nhận việc thành công'),
+              content: const Text('Job accepted'),
               backgroundColor: Colors.green[600],
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -647,6 +806,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       case 'Hoan thanh':
         return Colors.green;
       case 'Huy':
+      case 'Da huy lich':
         return Colors.red;
       default:
         return Colors.grey;
@@ -668,6 +828,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       case 'Hoan thanh':
         return 'Hoàn thành';
       case 'Huy':
+      case 'Da huy lich':
         return 'Đã hủy';
       default:
         return status ?? 'Unknown';
@@ -724,8 +885,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
           const SizedBox(height: 8),
           Text(
             localImage != null
-                ? 'Đã chọn ảnh (chưa gửi)'
-                : (hasImage ? 'Đã tải ảnh lên' : 'Chưa có ảnh'),
+                ? 'Selected image (not sent yet)'
+                : (hasImage ? 'Image uploaded' : 'No image'),
             style: TextStyle(
               fontSize: 13,
               color: localImage != null
@@ -764,7 +925,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                 child: OutlinedButton.icon(
                   onPressed: isUploading || !canUpload ? null : onPickLocal,
                   icon: const Icon(Icons.image_rounded, size: 18),
-                  label: Text(hasAnyImage ? 'Chọn lại' : 'Chọn ảnh'),
+                  label: Text(hasAnyImage ? 'Pick again' : 'Pick image'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: primaryBlue,
                     side: BorderSide(color: primaryBlue.withOpacity(0.35)),
@@ -787,7 +948,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                 strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.send_rounded, size: 18),
-                    label: const Text('Xác nhận gửi', style: TextStyle(fontSize: 13)),
+                    label: const Text('Send', style: TextStyle(fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -802,7 +963,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                   child: ElevatedButton.icon(
                     onPressed: hasImage ? onView : null,
                     icon: const Icon(Icons.visibility_rounded, size: 18),
-                    label: const Text('Xem ảnh'),
+                    label: const Text('View image'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           hasImage ? primaryBlue : Colors.grey[350],
@@ -835,12 +996,11 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
 
     final customerPhone = customer?['phone']?.toString() ?? '';
     final userPhone = user?['phone']?.toString() ?? '';
-    final isReferred = customerPhone.isNotEmpty &&
-        userPhone.isNotEmpty &&
-        customerPhone != userPhone;
+    final isReferred = customerPhone.isNotEmpty || (customer?['name']?.toString().isNotEmpty ?? false);
+    final isBookForMyself = customerPhone.isNotEmpty && userPhone.isNotEmpty && customerPhone == userPhone;
 
     final aptTitle =
-        apartment?['title']?.toString() ?? 'Căn hộ #${_appt['apartmentId']}';
+        apartment?['title']?.toString() ?? 'Căn hộ #${_appt['apartmentId'] is Map ? _appt['apartmentId']['\$oid'] : _appt['apartmentId']}';
     final aptProject = apartment?['projectInfo']?['project']?.toString() ?? '';
     final aptBuilding =
         apartment?['projectInfo']?['building']?.toString() ?? '';
@@ -853,8 +1013,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     final aptStatus = apartment?['houseStatus']?.toString() ?? '';
 
     final userName = user != null
-        ? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim()
-        : _appt['userId']?.toString() ?? 'Unknown';
+        ? (user['fullName']?.toString() ?? user['name']?.toString() ?? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}').trim()
+        : (_appt['userId'] is Map ? _appt['userId']['\$oid']?.toString() ?? 'Unknown' : _appt['userId']?.toString() ?? 'Unknown');
     final userPhone2 = user?['phone']?.toString() ?? '';
 
     final customerName = customer?['name']?.toString() ?? '';
@@ -865,6 +1025,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
     final hasCompleteImage = _hasImageValue('completeImage');
     final canFinishAppointment =
         status == 'Dang xem' && hasViewingImage && hasCompleteImage;
+    final canEdit = isMine && status != 'Hoan thanh' && status != 'Da huy lich' && status != 'Huy';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
@@ -877,7 +1038,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
           onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
-          'Chi Tiết Lịch Hẹn',
+          'Appointment Details',
           style: TextStyle(
             color: primaryBlue,
             fontWeight: FontWeight.w800,
@@ -887,9 +1048,11 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
             gradient: isMine
                 ? (status == 'Hoan thanh')
                     ? LinearGradient(
@@ -897,11 +1060,17 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
-                    : LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.blue.shade700],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
+                    : (status == 'Da huy lich' || status == 'Huy')
+                        ? LinearGradient(
+                            colors: [Colors.red.shade400, Colors.red.shade700],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : LinearGradient(
+                            colors: [Colors.blue.shade400, Colors.blue.shade700],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
                 : LinearGradient(
                     colors: [accentYellow, primaryBlue],
                     begin: Alignment.topLeft,
@@ -912,7 +1081,9 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                 color: isMine
                     ? (status == 'Hoan thanh'
                         ? Colors.green.withOpacity(0.4)
-                        : Colors.blue.withOpacity(0.4))
+                        : (status == 'Da huy lich' || status == 'Huy')
+                            ? Colors.red.withOpacity(0.4)
+                            : Colors.blue.withOpacity(0.4))
                     : primaryBlue.withOpacity(0.3),
                 blurRadius: 20,
                 spreadRadius: 2,
@@ -942,7 +1113,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'TRẠNG THÁI',
+                          'STATUS',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
@@ -986,7 +1157,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         // ── APPOINTMENT TIME ────────────────────────────
                         _SectionHeader(
                             icon: Icons.schedule_rounded,
-                            label: 'Thời gian hẹn'),
+                            label: 'Appointment time'),
                         const SizedBox(height: 10),
                         _InfoRow(Icons.calendar_today_rounded,
                             _formatDateTime(appointmentTime)),
@@ -1004,14 +1175,14 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: _isUpdatingAppointmentTime || !isMine
+                                  onPressed: _isUpdatingAppointmentTime || !canEdit
                                       ? null
                                       : _pickAppointmentDateTime,
                                   icon: const Icon(Icons.edit_calendar_rounded,
                                       size: 18),
                                   label: Text(
                                     _selectedAppointmentDateTime == null
-                                        ? 'Chọn ngày giờ mới'
+                                        ? 'Choose new date and time'
                                         : _formatDateTime(
                                             _selectedAppointmentDateTime!
                                                 .toUtc()
@@ -1033,7 +1204,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                               SizedBox(
                                 height: 40,
                                 child: ElevatedButton(
-                                  onPressed: _isUpdatingAppointmentTime || !isMine
+                                  onPressed: _isUpdatingAppointmentTime || !canEdit
                                       ? null
                                       : _updateAppointmentDateTime,
                                   style: ElevatedButton.styleFrom(
@@ -1060,12 +1231,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildImageUploadCard(
-                          title: 'Hình ảnh xem nhà',
+                          title: 'Viewing image',
                           hasImage: hasViewingImage,
                           imageUrl: viewingImage,
                           localImage: _localViewingImage,
                           isUploading: _isUploadingViewingImage,
-                          canUpload: isMine,
+                          canUpload: canEdit,
                           onPickLocal: () =>
                               _pickAppointmentImage('viewingImage'),
                           onConfirmSend: () =>
@@ -1075,12 +1246,12 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildImageUploadCard(
-                          title: 'Hình ảnh hoàn thành',
+                          title: 'Complete image',
                           hasImage: hasCompleteImage,
                           imageUrl: completeImage,
                           localImage: _localCompleteImage,
                           isUploading: _isUploadingCompleteImage,
-                          canUpload: isMine,
+                          canUpload: canEdit,
                           onPickLocal: () =>
                               _pickAppointmentImage('completeImage'),
                           onConfirmSend: () =>
@@ -1101,19 +1272,21 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         _InfoRow(Icons.home_work_rounded, aptTitle),
                         if (aptProject.isNotEmpty || aptBuilding.isNotEmpty)
                           _InfoRow(Icons.business_rounded,
-                              'Dự án / Tòa: $aptProject - $aptBuilding'),
+                              'Project / Building: $aptProject - $aptBuilding'),
                         if (aptFloor.isNotEmpty || aptNumber.isNotEmpty)
                           _InfoRow(Icons.layers_rounded,
-                              'Tầng $aptFloor - Căn $aptNumber'),
+                              'Floor $aptFloor - Apartment $aptNumber'),
                         if (aptWard.isNotEmpty || aptCommune.isNotEmpty)
                           _InfoRow(Icons.location_on_rounded,
                               '$aptWard, $aptCommune'),
                         if (aptPrice != null)
                           _InfoRow(Icons.attach_money_rounded,
-                              'Giá: ${_formatPrice(aptPrice)}'),
+                              'Price: ${_formatPrice(aptPrice)}'),
                         if (aptStatus.isNotEmpty)
                           _InfoRow(
                               Icons.info_outline_rounded, 'Status: $aptStatus'),
+                        if (_appt['lyDo'] != null && _appt['lyDo'].toString().isNotEmpty)
+                          _InfoRow(Icons.cancel_outlined, 'Lý do hủy: ${_appt['lyDo']}', iconColor: Colors.red),
 
                         if (apartment != null) ...[
                           const SizedBox(height: 8),
@@ -1146,9 +1319,9 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                             icon: Icons.person_rounded, label: 'Booker'),
                         const SizedBox(height: 10),
                         _InfoRow(Icons.badge_rounded,
-                            userName.isNotEmpty ? userName : 'Unknown'),
+                            'Full name: ${userName.isNotEmpty ? userName : 'Unknown'}'),
                         if (userPhone2.isNotEmpty)
-                          _InfoRow(Icons.phone_rounded, userPhone2),
+                          _InfoRow(Icons.phone_rounded, 'Phone: $userPhone2'),
 
                         // ── CUSTOMER (referred) ─────────────────────────
                         if (isReferred) ...[
@@ -1157,14 +1330,18 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                           const SizedBox(height: 16),
                           _SectionHeader(
                             icon: Icons.handshake_rounded,
-                            label: 'Khách được môi giới',
+                            label: 'Referred customer',
                             color: const Color(0xFF9C27B0),
                           ),
                           const SizedBox(height: 10),
-                          _InfoRow(Icons.person_outline_rounded, customerName,
+                          if (isBookForMyself)
+                            const _InfoRow(Icons.person_outline_rounded, 'Book for myself',
+                                iconColor: Color(0xFF9C27B0)),
+                          _InfoRow(Icons.person_outline_rounded, 'Full name: $customerName',
                               iconColor: const Color(0xFF9C27B0)),
-                          _InfoRow(Icons.phone_outlined, customerPhoneDisplay,
-                              iconColor: const Color(0xFF9C27B0)),
+                          if (customerPhoneDisplay.isNotEmpty)
+                            _InfoRow(Icons.phone_outlined, 'Phone: $customerPhoneDisplay',
+                                iconColor: const Color(0xFF9C27B0)),
                         ],
 
                         const SizedBox(height: 16),
@@ -1176,8 +1353,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                           _InfoRow(
                             Icons.manage_accounts_rounded,
                             isMine
-                                ? '✅ Bạn đang phụ trách'
-                                : '👤 Đã có nhân viên phụ trách',
+                                ? 'You are in charge'
+                                : 'Already have a staff in charge',
                             iconColor: isMine ? Colors.green : Colors.blueGrey,
                           ),
                         ],
@@ -1188,6 +1365,8 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
               ),
             ),
           ),
+        ),
+          ],
         ),
       ),
       bottomNavigationBar: SafeArea(
@@ -1209,7 +1388,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                         : const Icon(Icons.assignment_turned_in_rounded,
                             size: 22),
                     label: Text(
-                      _isAccepting ? 'Đang Nhận Việc...' : 'Nhận Việc',
+                      _isAccepting ? 'Accepting...' : 'Accept',
                       style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1247,7 +1426,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                       color: Colors.green[600], size: 22),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Công việc đã hoàn thành !',
+                                    'Finished !',
                                     style: TextStyle(
                                       color: Colors.green[700],
                                       fontWeight: FontWeight.w700,
@@ -1291,7 +1470,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                 icon: const Icon(Icons.request_quote_rounded,
                                     size: 22),
                                 label: const Text(
-                                  'Tạo yêu cầu đặt cọc',
+                                  'Create deposit order',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
@@ -1329,7 +1508,7 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                         size: 22,
                                       ),
                                       label: const Text(
-                                        'Hoàn thành',
+                                        'Finished',
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.w700,
@@ -1357,11 +1536,36 @@ class _OnSiteStaffDetailScreenState extends State<OnSiteStaffDetailScreen> {
                                       ),
                                     ),
                                     child: const Text(
-                                      'Cần upload đủ ảnh xem nhà và hoàn thành xem để hoàn tất',
+                                      'All before steps must be completed',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.orange,
+                                      ),
+                                    ),
+                                  ),
+                                if (status == 'Yeu cau xem' || status == 'Da xac nhan lich')
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 54,
+                                    child: FilledButton.icon(
+                                      onPressed: _isUpdatingStatus ? null : _showCancelDialog,
+                                      icon: const Icon(Icons.cancel_rounded, size: 22),
+                                      label: const Text(
+                                        'Cancel appointment',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.red.shade50,
+                                        foregroundColor: Colors.red.shade700,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          side: BorderSide(color: Colors.red.shade200, width: 1.5),
+                                        ),
                                       ),
                                     ),
                                   ),
